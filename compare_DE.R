@@ -21,14 +21,13 @@ if(require("parallel")) cl <- makeCluster(cores) else cl <- NULL
 
 for (i in 1:5) {
   # Generate filtered data
-  counts <- simulate.DE.DD.data(dataset='DEDD2', n.vars=20000, samples.per.cond=samples.per.cond)
-  DE <- counts@variable.annotations$differential.expression
+  counts <- generateSyntheticData(dataset='DEonly', n.vars=20000, samples.per.cond=samples.per.cond, 
+                                  n.diffexp=1000, fraction.upregulated=0.5, 
+                                  filter.threshold.mediancpm=0.5)
   DD <- counts@variable.annotations$differential.dispersion
   lfcm1 <- abs(counts@variable.annotations$truelog2foldchanges) > 1
   lfcm2 <- abs(counts@variable.annotations$truelog2foldchanges) > 2
-  lfcd1 <- abs(counts@variable.annotations$truelog2fcdispersion) > 1
-  lfcd2 <- abs(counts@variable.annotations$truelog2fcdispersion) > 2
-  
+
   # Normalise and create DGEList object
   nf <- calcNormFactors(counts@count.matrix)
   norm <- t(t(counts@count.matrix) / nf)
@@ -157,8 +156,8 @@ for (i in 1:5) {
   
   ## MDSeq
   contrasts <- get.model.matrix(group)
-  fit.zi.MDSeq <- MDSeq(norm, contrast=contrasts, mc.cores=cores-1)
-  fit.nozi.MDSeq <- MDSeq(norm, contrast=contrasts, test.ZI=F, mc.cores=cores-1)
+  fit.zi.MDSeq <- MDSeq(norm, contrast=contrasts, mc.cores=cores)
+  fit.nozi.MDSeq <- MDSeq(norm, contrast=contrasts, test.ZI=F, mc.cores=cores)
   res.zi.MDSeq <- extract.ZIMD(fit.zi.MDSeq, compare=list(A="1",B="2"))
   res.zi.lfc1.MDSeq <- extract.ZIMD(fit.zi.MDSeq, compare=list(A="1",B="2"), log2FC.threshold=1)
   res.zi.lfc2.MDSeq <- extract.ZIMD(fit.zi.MDSeq, compare=list(A="1",B="2"), log2FC.threshold=2)
@@ -171,12 +170,6 @@ for (i in 1:5) {
   p.mean.nozi.MDSeq <- res.nozi.MDSeq$Pvalue.mean
   p.mean.nozi.lfc1.MDSeq <- res.nozi.lfc1.MDSeq$Pvalue.mean
   p.mean.nozi.lfc2.MDSeq <- res.nozi.lfc2.MDSeq$Pvalue.mean
-  p.disp.zi.MDSeq <- res.zi.MDSeq$Pvalue.dispersion
-  p.disp.zi.lfc1.MDSeq <- res.zi.lfc1.MDSeq$Pvalue.dispersion
-  p.disp.zi.lfc2.MDSeq <- res.zi.lfc2.MDSeq$Pvalue.dispersion
-  p.disp.nozi.MDSeq <- res.nozi.MDSeq$Pvalue.dispersion
-  p.disp.nozi.lfc1.MDSeq <- res.nozi.lfc1.MDSeq$Pvalue.dispersion
-  p.disp.nozi.lfc2.MDSeq <- res.nozi.lfc2.MDSeq$Pvalue.dispersion
   rm(list=c('contrasts', 'fit.zi.MDSeq', 'fit.nozi.MDSeq', 'res.zi.MDSeq', 
             'res.zi.lfc1.MDSeq', 'res.zi.lfc2.MDSeq', 'res.nozi.MDSeq', 'res.nozi.lfc1.MDSeq', 
             'res.nozi.lfc2.MDSeq'))
@@ -191,8 +184,6 @@ for (i in 1:5) {
   log.disp.diff.expHM <- log(as.matrix(expHM$disps1)) - log(as.matrix(expHM$disps2))
   p.mean.expHM <- apply(mean.diff.expHM,2,hpd.pval)
   p.lmean.expHM <- apply(log.mean.diff.expHM,2,hpd.pval)
-  p.disp.expHM <- apply(disp.diff.expHM,2,hpd.pval)
-  p.ldisp.expHM <- apply(log.disp.diff.expHM,2,hpd.pval)
   rm(list=c('expHM', 'mean.diff.expHM', 'log.mean.diff.expHM', 
             'disp.diff.expHM', 'log.disp.diff.expHM'))
 
@@ -206,18 +197,13 @@ for (i in 1:5) {
   log.disp.diff.lnHM <- log(as.matrix(lnHM$disps1)) - log(as.matrix(lnHM$disps2))
   p.mean.lnHM <- apply(mean.diff.lnHM,2,hpd.pval)
   p.lmean.lnHM <- apply(log.mean.diff.lnHM,2,hpd.pval)
-  p.disp.lnHM <- apply(disp.diff.lnHM,2,hpd.pval)
-  p.ldisp.lnHM <- apply(log.disp.diff.lnHM,2,hpd.pval)
   rm(list=c('lnHM', 'mean.diff.lnHM', 'log.mean.diff.lnHM', 
             'disp.diff.lnHM', 'log.disp.diff.lnHM'))
   
   results <- list(data = counts, 
                   DE = DE, 
-                  DD = DD, 
                   lfcm1 = lfcm1, 
                   lfcm2 = lfcm2, 
-                  lfcd1 = lfcd1, 
-                  lfcd2 = lfcd2, 
                   p.ql.lfc1.edgeR = p.ql.lfc1.edgeR, 
                   p.ql.lfc2.edgeR = p.ql.lfc2.edgeR, 
                   p.lr.edgeR = p.lr.edgeR, 
@@ -267,29 +253,18 @@ for (i in 1:5) {
                   p.mean.nozi.MDSeq = p.mean.nozi.MDSeq, 
                   p.mean.nozi.lfc1.MDSeq = p.mean.nozi.lfc1.MDSeq, 
                   p.mean.nozi.lfc2.MDSeq = p.mean.nozi.lfc2.MDSeq, 
-                  p.disp.zi.MDSeq = p.disp.zi.MDSeq, 
-                  p.disp.zi.lfc1.MDSeq = p.disp.zi.lfc1.MDSeq, 
-                  p.disp.zi.lfc2.MDSeq = p.disp.zi.lfc2.MDSeq, 
-                  p.disp.nozi.MDSeq = p.disp.nozi.MDSeq, 
-                  p.disp.nozi.lfc1.MDSeq = p.disp.nozi.lfc1.MDSeq, 
-                  p.disp.nozi.lfc2.MDSeq = p.disp.nozi.lfc2.MDSeq, 
                   prob.expHM = prob.expHM, 
                   prop.expHM = post.prop.expHM, 
                   p.mean.expHM = p.mean.expHM, 
                   p.lmean.expHM = p.lmean.expHM, 
-                  p.disp.expHM = p.disp.expHM, 
-                  p.ldisp.expHM = p.ldisp.expHM, 
                   prob.lnHM = prob.lnHM, 
                   prop.lnHM = post.prop.lnHM, 
                   p.mean.lnHM = p.mean.lnHM, 
-                  p.lmean.lnHM = p.lmean.lnHM, 
-                  p.disp.lnHM = p.disp.lnHM, 
-                  p.ldisp.lnHM = p.ldisp.lnHM)
+                  p.lmean.lnHM = p.lmean.lnHM)
   
   filename <- paste0('results.', format(Sys.time(), "%Y-%m-%d_%H%M%S"), '.rds')
   saveRDS(results, file=here(filename))
 
-  rm(list=c('counts', 'DE', 'DD', 'lfcm1', 'lfcm2', 'lfcd1', 'lfcd2', 
-            'nf', 'norm', 'dge', 'filename', 'results'))
+  rm(list=c('counts', 'DD', 'lfcm1', 'lfcm2', 'nf', 'norm', 'dge', 'filename', 'results'))
 }
 
