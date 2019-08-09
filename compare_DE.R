@@ -10,7 +10,7 @@ library(baySeq)
 library(MDSeq)
 source(here('scripts','2019-04-03_exponential_hmm_adaptive_proposals_three_chains_function.R'))
 source(here('scripts','2019-03-27_lognormal_hmm_adaptive_proposals_three_chains_function.R'))
-source(here('scripts','2019-05-03_hpd_tail_prob_function.R'))
+source(here('scripts','2019-06-26_hpd_tail_prob_function.R'))
 source(here('scripts','2019-05-17_compData_diff_disp_functions.R'))
 
 samples.per.cond <- 2
@@ -19,12 +19,15 @@ design <- model.matrix(~group)
 cores <- detectCores()
 if(require("parallel")) cl <- makeCluster(cores) else cl <- NULL
 
-for (i in 1:5) {
+for (i in 1:50) {
   # Generate filtered data
-  counts <- generateSyntheticData(dataset='DEonly', n.vars=20000, samples.per.cond=samples.per.cond, 
-                                  n.diffexp=1000, fraction.upregulated=0.5, 
-                                  filter.threshold.mediancpm=0.5)
-  DD <- counts@variable.annotations$differential.dispersion
+  #counts <- generateSyntheticData(dataset='DEonly', n.vars=20000, samples.per.cond=samples.per.cond, 
+  #                                n.diffexp=1000, fraction.upregulated=0.5, 
+  #                                filter.threshold.mediancpm=0.5)
+  filename <- paste0('DE', samples.per.cond, '.', i)
+  #counts <- readRDS(paste0(filename,'.rds'))
+  counts <- readRDS(here('Data',paste0(filename,'.rds')))
+  DE <- counts@variable.annotations$differential.expression
   lfcm1 <- abs(counts@variable.annotations$truelog2foldchanges) > 1
   lfcm2 <- abs(counts@variable.annotations$truelog2foldchanges) > 2
 
@@ -121,7 +124,8 @@ for (i in 1:5) {
   res.baySeq <- topCounts(dat.baySeq, group='DE', 
                           number=Inf)[order(topCounts(dat.baySeq, group='DE', number=Inf)$annotation),]
   # $annotation on cluster (presumably different in older version), $names on my laptop
-  prob.baySeq <- res.baySeq$likes
+  prob.baySeq <- res.baySeq$Likelihood
+  # $Likelihood on cluster (presumably different in older version), $likes on my laptop
   q.baySeq <- res.baySeq$FDR.DE
   rm(list=c('dat.baySeq', 'res.baySeq'))
   
@@ -131,6 +135,7 @@ for (i in 1:5) {
 #  subset <- sample(nrow(norm), 500)
 #  norm.subset <- norm[subset,]
 #  shrink <- ShrinkSeq(form=form, dat=norm.subset, fams='zinb', shrinkfixed='group', ncpus=cores)
+#  fit.subset.ShrinkBayes <- FitAllShrink(form, norm.subset, fams='zinb', shrinksimul=shrink, ncpus=cores)
 #  npprior.mix <- MixtureUpdatePrior(fitall=fit.subset.ShrinkBayes, shrinkpara='group', ncpus=cores)
 #  npprior.np <- NonParaUpdatePrior(fitall=fit.subset.ShrinkBayes, shrinkpara='group', ncpus=cores)
 #  npprior.np.lfc <- NonParaUpdatePrior(fitall=fit.subset.ShrinkBayes, shrinkpara='group', ncpus=cores, 
@@ -156,8 +161,8 @@ for (i in 1:5) {
   
   ## MDSeq
   contrasts <- get.model.matrix(group)
-  fit.zi.MDSeq <- MDSeq(norm, contrast=contrasts, mc.cores=cores)
-  fit.nozi.MDSeq <- MDSeq(norm, contrast=contrasts, test.ZI=F, mc.cores=cores)
+  fit.zi.MDSeq <- MDSeq(norm, contrast=contrasts, mc.cores=cores-1)
+  fit.nozi.MDSeq <- MDSeq(norm, contrast=contrasts, test.ZI=F, mc.cores=cores-1)
   res.zi.MDSeq <- extract.ZIMD(fit.zi.MDSeq, compare=list(A="1",B="2"))
   res.zi.lfc1.MDSeq <- extract.ZIMD(fit.zi.MDSeq, compare=list(A="1",B="2"), log2FC.threshold=1)
   res.zi.lfc2.MDSeq <- extract.ZIMD(fit.zi.MDSeq, compare=list(A="1",B="2"), log2FC.threshold=2)
@@ -184,6 +189,8 @@ for (i in 1:5) {
   log.disp.diff.expHM <- log(as.matrix(expHM$disps1)) - log(as.matrix(expHM$disps2))
   p.mean.expHM <- apply(mean.diff.expHM,2,hpd.pval)
   p.lmean.expHM <- apply(log.mean.diff.expHM,2,hpd.pval)
+  p.mean.lfc1.expHM <- apply(log.mean.diff.expHM,2,hpd.pval, m=1)
+  p.mean.lfc2.expHM <- apply(log.mean.diff.expHM,2,hpd.pval, m=2)
   rm(list=c('expHM', 'mean.diff.expHM', 'log.mean.diff.expHM', 
             'disp.diff.expHM', 'log.disp.diff.expHM'))
 
@@ -197,6 +204,8 @@ for (i in 1:5) {
   log.disp.diff.lnHM <- log(as.matrix(lnHM$disps1)) - log(as.matrix(lnHM$disps2))
   p.mean.lnHM <- apply(mean.diff.lnHM,2,hpd.pval)
   p.lmean.lnHM <- apply(log.mean.diff.lnHM,2,hpd.pval)
+  p.mean.lfc1.lnHM <- apply(log.mean.diff.lnHM,2,hpd.pval, m=1)
+  p.mean.lfc2.lnHM <- apply(log.mean.diff.lnHM,2,hpd.pval, m=2)
   rm(list=c('lnHM', 'mean.diff.lnHM', 'log.mean.diff.lnHM', 
             'disp.diff.lnHM', 'log.disp.diff.lnHM'))
   
@@ -204,6 +213,7 @@ for (i in 1:5) {
                   DE = DE, 
                   lfcm1 = lfcm1, 
                   lfcm2 = lfcm2, 
+                  p.ql.edgeR = p.ql.edgeR, 
                   p.ql.lfc1.edgeR = p.ql.lfc1.edgeR, 
                   p.ql.lfc2.edgeR = p.ql.lfc2.edgeR, 
                   p.lr.edgeR = p.lr.edgeR, 
@@ -257,14 +267,20 @@ for (i in 1:5) {
                   prop.expHM = post.prop.expHM, 
                   p.mean.expHM = p.mean.expHM, 
                   p.lmean.expHM = p.lmean.expHM, 
+                  p.mean.lfc1.expHM = p.mean.lfc1.expHM, 
+                  p.mean.lfc2.expHM = p.mean.lfc2.expHM, 
                   prob.lnHM = prob.lnHM, 
                   prop.lnHM = post.prop.lnHM, 
                   p.mean.lnHM = p.mean.lnHM, 
-                  p.lmean.lnHM = p.lmean.lnHM)
+                  p.lmean.lnHM = p.lmean.lnHM, 
+                  p.disp.lfc1.lnHM = p.disp.lfc1.lnHM, 
+                  p.disp.lfc2.lnHM = p.disp.lfc2.lnHM)
   
-  filename <- paste0('results.', format(Sys.time(), "%Y-%m-%d_%H%M%S"), '.rds')
+  filename <- paste0('results.', filename, '.rds')
   saveRDS(results, file=here(filename))
 
-  rm(list=c('counts', 'DD', 'lfcm1', 'lfcm2', 'nf', 'norm', 'dge', 'filename', 'results'))
+  rm(list=c('counts', 'DE', 'lfcm1', 'lfcm2', 'nf', 'norm', 'dge', 'filename', 'results'))
 }
 
+filename <- paste0('sessionInfo.DE', samples.per.cond, '.rds')
+saveRDS(sessionInfo(), file=here(filename))

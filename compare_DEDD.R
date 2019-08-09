@@ -10,7 +10,7 @@ library(baySeq)
 library(MDSeq)
 source(here('scripts','2019-04-03_exponential_hmm_adaptive_proposals_three_chains_function.R'))
 source(here('scripts','2019-03-27_lognormal_hmm_adaptive_proposals_three_chains_function.R'))
-source(here('scripts','2019-05-03_hpd_tail_prob_function.R'))
+source(here('scripts','2019-06-26_hpd_tail_prob_function.R'))
 source(here('scripts','2019-05-17_compData_diff_disp_functions.R'))
 
 samples.per.cond <- 2
@@ -19,9 +19,12 @@ design <- model.matrix(~group)
 cores <- detectCores()
 if(require("parallel")) cl <- makeCluster(cores) else cl <- NULL
 
-for (i in 1:5) {
+for (i in 1:50) {
   # Generate filtered data
-  counts <- simulate.DE.DD.data(dataset='DEDD2', n.vars=20000, samples.per.cond=samples.per.cond)
+  #counts <- simulate.DE.DD.data(dataset='DEDD2', n.vars=20000, samples.per.cond=samples.per.cond)
+  filename <- paste0('DEDD', samples.per.cond, '.', i)
+  #counts <- readRDS(paste0(filename,'.rds'))
+  counts <- readRDS(here('Data',paste0(filename,'.rds')))
   DE <- counts@variable.annotations$differential.expression
   DD <- counts@variable.annotations$differential.dispersion
   lfcm1 <- abs(counts@variable.annotations$truelog2foldchanges) > 1
@@ -121,8 +124,9 @@ for (i in 1:5) {
   dat.baySeq <- getLikelihoods(dat.baySeq, cl=cl)
   res.baySeq <- topCounts(dat.baySeq, group='DE', 
                           number=Inf)[order(topCounts(dat.baySeq, group='DE', number=Inf)$annotation),]
-  # $annotation on cluster (presumably different in older version), $names on my laptop
-  prob.baySeq <- res.baySeq$likes
+  # $annotation on cluster (presumably different in older version), $name on my laptop
+  prob.baySeq <- res.baySeq$Likelihood
+  # $Likelihood on cluster (presumably different in older version), $likes on my laptop
   q.baySeq <- res.baySeq$FDR.DE
   rm(list=c('dat.baySeq', 'res.baySeq'))
   
@@ -132,6 +136,7 @@ for (i in 1:5) {
 #  subset <- sample(nrow(norm), 500)
 #  norm.subset <- norm[subset,]
 #  shrink <- ShrinkSeq(form=form, dat=norm.subset, fams='zinb', shrinkfixed='group', ncpus=cores)
+#  fit.subset.ShrinkBayes <- FitAllShrink(form, norm.subset, fams='zinb', shrinksimul=shrink, ncpus=cores)
 #  npprior.mix <- MixtureUpdatePrior(fitall=fit.subset.ShrinkBayes, shrinkpara='group', ncpus=cores)
 #  npprior.np <- NonParaUpdatePrior(fitall=fit.subset.ShrinkBayes, shrinkpara='group', ncpus=cores)
 #  npprior.np.lfc <- NonParaUpdatePrior(fitall=fit.subset.ShrinkBayes, shrinkpara='group', ncpus=cores, 
@@ -189,10 +194,14 @@ for (i in 1:5) {
   log.mean.diff.expHM <- log(as.matrix(expHM$means1)) - log(as.matrix(expHM$means2))
   disp.diff.expHM <- as.matrix(expHM$disps1) - as.matrix(expHM$disps2)
   log.disp.diff.expHM <- log(as.matrix(expHM$disps1)) - log(as.matrix(expHM$disps2))
-  p.mean.expHM <- apply(mean.diff.expHM,2,hpd.pval)
-  p.lmean.expHM <- apply(log.mean.diff.expHM,2,hpd.pval)
-  p.disp.expHM <- apply(disp.diff.expHM,2,hpd.pval)
-  p.ldisp.expHM <- apply(log.disp.diff.expHM,2,hpd.pval)
+  p.mean.expHM <- apply(mean.diff.expHM,2,hpd.pval, m=0)
+  p.lmean.expHM <- apply(log.mean.diff.expHM,2,hpd.pval, m=0)
+  p.mean.lfc1.expHM <- apply(log.mean.diff.expHM,2,hpd.pval, m=1)
+  p.mean.lfc2.expHM <- apply(log.mean.diff.expHM,2,hpd.pval, m=2)
+  p.disp.expHM <- apply(disp.diff.expHM,2,hpd.pval, m=0)
+  p.ldisp.expHM <- apply(log.disp.diff.expHM,2,hpd.pval, m=0)
+  p.disp.lfc1.expHM <- apply(log.disp.diff.expHM,2,hpd.pval, m=1)
+  p.disp.lfc2.expHM <- apply(log.disp.diff.expHM,2,hpd.pval, m=2)
   rm(list=c('expHM', 'mean.diff.expHM', 'log.mean.diff.expHM', 
             'disp.diff.expHM', 'log.disp.diff.expHM'))
 
@@ -206,8 +215,12 @@ for (i in 1:5) {
   log.disp.diff.lnHM <- log(as.matrix(lnHM$disps1)) - log(as.matrix(lnHM$disps2))
   p.mean.lnHM <- apply(mean.diff.lnHM,2,hpd.pval)
   p.lmean.lnHM <- apply(log.mean.diff.lnHM,2,hpd.pval)
+  p.mean.lfc1.lnHM <- apply(log.mean.diff.lnHM,2,hpd.pval, m=1)
+  p.mean.lfc2.lnHM <- apply(log.mean.diff.lnHM,2,hpd.pval, m=2)
   p.disp.lnHM <- apply(disp.diff.lnHM,2,hpd.pval)
   p.ldisp.lnHM <- apply(log.disp.diff.lnHM,2,hpd.pval)
+  p.disp.lfc1.lnHM <- apply(log.disp.diff.lnHM,2,hpd.pval, m=1)
+  p.disp.lfc2.lnHM <- apply(log.disp.diff.lnHM,2,hpd.pval, m=2)
   rm(list=c('lnHM', 'mean.diff.lnHM', 'log.mean.diff.lnHM', 
             'disp.diff.lnHM', 'log.disp.diff.lnHM'))
   
@@ -218,6 +231,7 @@ for (i in 1:5) {
                   lfcm2 = lfcm2, 
                   lfcd1 = lfcd1, 
                   lfcd2 = lfcd2, 
+                  p.ql.edgeR = p.ql.edgeR, 
                   p.ql.lfc1.edgeR = p.ql.lfc1.edgeR, 
                   p.ql.lfc2.edgeR = p.ql.lfc2.edgeR, 
                   p.lr.edgeR = p.lr.edgeR, 
@@ -277,19 +291,32 @@ for (i in 1:5) {
                   prop.expHM = post.prop.expHM, 
                   p.mean.expHM = p.mean.expHM, 
                   p.lmean.expHM = p.lmean.expHM, 
+                  p.mean.lfc1.expHM = p.mean.lfc1.expHM, 
+                  p.mean.lfc2.expHM = p.mean.lfc2.expHM, 
                   p.disp.expHM = p.disp.expHM, 
                   p.ldisp.expHM = p.ldisp.expHM, 
+                  p.disp.lfc1.expHM = p.disp.lfc1.expHM, 
+                  p.disp.lfc2.expHM = p.disp.lfc2.expHM, 
                   prob.lnHM = prob.lnHM, 
                   prop.lnHM = post.prop.lnHM, 
                   p.mean.lnHM = p.mean.lnHM, 
                   p.lmean.lnHM = p.lmean.lnHM, 
+                  p.mean.lfc1.lnHM = p.mean.lfc1.lnHM, 
+                  p.mean.lfc2.lnHM = p.mean.lfc2.lnHM, 
                   p.disp.lnHM = p.disp.lnHM, 
-                  p.ldisp.lnHM = p.ldisp.lnHM)
+                  p.ldisp.lnHM = p.ldisp.lnHM, 
+                  p.disp.lfc1.lnHM = p.disp.lfc1.lnHM, 
+                  p.disp.lfc2.lnHM = p.disp.lfc2.lnHM)
   
-  filename <- paste0('results.', format(Sys.time(), "%Y-%m-%d_%H%M%S"), '.rds')
+  filename <- paste0('results.', filename, '.rds')
   saveRDS(results, file=here(filename))
 
   rm(list=c('counts', 'DE', 'DD', 'lfcm1', 'lfcm2', 'lfcd1', 'lfcd2', 
             'nf', 'norm', 'dge', 'filename', 'results'))
 }
+
+filename <- paste0('sessionInfo.DEDD', samples.per.cond, '.rds')
+saveRDS(sessionInfo(), file=here(filename))
+
+
 
