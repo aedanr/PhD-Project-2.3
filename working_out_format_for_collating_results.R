@@ -5,22 +5,39 @@
 
 library(here)
 library(compcodeR)
+for (i in 1:50) {
+#  res.ShrinkBayes <- readRDS(here('Results/DEDD compcodeR data results July 2019', 
+#                                  paste0('results.DEDD2.',i,'.ShrinkBayes.rds')))
+#  res.ShrinkBayes <- res.ShrinkBayes[-(1:7)]
+  res.edgeR_baySeq_MDSeq <- readRDS(here('Results/DE compcodeR data results July 2019', 
+                                  paste0('results.DE2.',i,'.edgeR_baySeq_MDSeq.rds')))
+  res.lfc1.lnHM_lfc2.lnHM <- readRDS(here('Results/DE compcodeR data results July 2019', 
+                                          paste0('results.DE2.',i,'.lfc1.lnHM_lfc2.rds')))
+  res.lfc1.lnHM_lfc2.lnHM <- res.lfc1.lnHM_lfc2.lnHM[-(1:4)]
+  res.rest <- readRDS(here('Results/DE compcodeR data results July 2019', 
+                                  paste0('results.DE2.',i,'.rds')))
+  overlap <- which(names(res.rest) %in% names(res.edgeR_baySeq_MDSeq))
+  res.rest <- res.rest[-overlap]
+  res.all <- c(res.edgeR_baySeq_MDSeq, res.rest, res.lfc1.lnHM_lfc2.lnHM)
+  saveRDS(res.all, file=here('Results/DE compcodeR data results July 2019', 
+                             paste0('results.DE2.',i,'.all.rds')))
+}
+rm(list=c('i', 'res.ShrinkBayes', 'res.edgeR_baySeq_MDSeq', 'res.rest', 'overlap', 'res.all'))
+
+
 library(ROCR)
 library(caret)
 library(qvalue)
 source(here('scripts','2019-05-03_bfdr_function.R'))
-res <- readRDS(here('Results/DEDD compcodeR data results July 2019','results.DEDD10.1.rds'))
-names(res)
 
 # Data:
-# data DE DD lfcm lfcm lfcd lfcd
+# data DE DD lfcm1 lfcm2 lfcd1 lfcd2
 
 # edgeR:
-#            p.ql.lfc1.edgeR p.ql.lfc2.edgeR p.lr.edgeR p.lr.lfc1.edgeR p.lr.lfc2.edgeR p.et.edgeR
+# p.ql.edgeR p.ql.lfc1.edgeR p.ql.lfc2.edgeR p.lr.edgeR p.lr.lfc1.edgeR p.lr.lfc2.edgeR p.et.edgeR
 # q.ql.edgeR q.ql.lfc1.edgeR q.ql.lfc2.edgeR q.lr.edgeR q.lr.lfc1.edgeR q.lr.lfc2.edgeR q.et.edgeR
 # edgeR user guide says it uses BH.
 # mean(res$q.lr.edgeR == p.adjust(res$p.lr.edgeR, method='BH')) is 1, so confirms.
-### Need to re-run DEDD, DE to save p.ql.edgeR ###
 
 # DESeq
 # p.noif.DESeq p.if.DESeq p.lfc1.DESeq p.lfc2.DESeq
@@ -40,20 +57,27 @@ names(res)
 # mean(res$q.notrend.DSS == p.adjust(res$p.notrend.DSS, method='BH')) is 0. Not clear what 
 # fdr (q here) and lfdr from DSS are, but they don't seem to be increasing with p-value. Should also 
 # compute BH q-values from p-values.
+# trend in DEDD2, not DEDD5, DEDD10; in DE2, DE5, not DE10
 
 # baySeq
 # prob.baySeq
 # q.baySeq
-### Need to re-run DEDD, DE with $Likelihood instead of $likes for prob.baySeq ###
+
+# ShrinkBayes (only DEDD2)
+# lfdr.mix.ShrinkBayes lfdr.np.ShrinkBayes lfdr.np.lfc1.ShrinkBayes lfdr.np.lfc2.ShrinkBayes
+# bfdr.mix.ShrinkBayes bfdr.np.ShrinkBayes bfdr.np.lfc1.ShrinkBayes bfdr.np.lfc2.ShrinkBayes
 
 # MDSeq
 # p.mean.zi.MDSeq   p.mean.zi.lfc1.MDSeq   p.mean.zi.lfc2.MDSeq
 # p.mean.nozi.MDSeq p.mean.nozi.lfc1.MDSeq p.mean.nozi.lfc2.MDSeq
 # p.disp.zi.MDSeq   p.disp.zi.lfc1.MDSeq   p.disp.zi.lfc2.MDSeq
 # p.disp.nozi.MDSeq p.disp.nozi.lfc1.MDSeq p.disp.nozi.lfc2.MDSeq
+# q.mean.zi.MDSeq   q.mean.zi.lfc1.MDSeq   q.mean.zi.lfc2.MDSeq
+# q.mean.nozi.MDSeq q.mean.nozi.lfc1.MDSeq q.mean.nozi.lfc2.MDSeq
+# q.disp.zi.MDSeq   q.disp.zi.lfc1.MDSeq   q.disp.zi.lfc2.MDSeq
+# q.disp.nozi.MDSeq q.disp.nozi.lfc1.MDSeq q.disp.nozi.lfc2.MDSeq
 # Haven't included FDR-corrected values but should. Better to use output from method directly where possible.
 # MDSeq uses p.adjust() with method ='BY' by default, but still best to use output from MDSeq.
-### Re-run DEDD, DE to include FDR for MDSeq ###
 
 # expHM
 # prob.expHM prop.expHM
@@ -70,152 +94,6 @@ names(res)
 # Also need to use proportions to define thresholds for posterior probability.
 
 
-
-
-raw.mean.expHM <- res$p.mean.expHM < 0.05
-raw.lmean.expHM <- res$p.lmean.expHM < 0.05
-raw.disp.expHM <- res$p.disp.expHM < 0.05
-raw.ldisp.expHM <- res$p.ldisp.expHM < 0.05
-raw.mean.lnHM <- res$p.mean.lnHM < 0.05
-raw.lmean.lnHM <- res$p.lmean.lnHM < 0.05
-raw.disp.lnHM <- res$p.disp.lnHM < 0.05
-raw.ldisp.lnHM <- res$p.ldisp.lnHM < 0.05
-bh.mean.expHM <- p.adjust(res$p.mean.expHM, method='BH') < 0.05
-bh.lmean.expHM <- p.adjust(res$p.lmean.expHM, method='BH') < 0.05
-bh.disp.expHM <- p.adjust(res$p.disp.expHM, method='BH') < 0.05
-bh.ldisp.expHM <- p.adjust(res$p.ldisp.expHM, method='BH') < 0.05
-bh.mean.lnHM <- p.adjust(res$p.mean.lnHM, method='BH') < 0.05
-bh.lmean.lnHM <- p.adjust(res$p.lmean.lnHM, method='BH') < 0.05
-bh.disp.lnHM <- p.adjust(res$p.disp.lnHM, method='BH') < 0.05
-bh.ldisp.lnHM <- p.adjust(res$p.ldisp.lnHM, method='BH') < 0.05
-by.mean.expHM <- p.adjust(res$p.mean.expHM, method='BY') < 0.05
-by.lmean.expHM <- p.adjust(res$p.lmean.expHM, method='BY') < 0.05
-by.disp.expHM <- p.adjust(res$p.disp.expHM, method='BY') < 0.05
-by.ldisp.expHM <- p.adjust(res$p.ldisp.expHM, method='BY') < 0.05
-by.mean.lnHM <- p.adjust(res$p.mean.lnHM, method='BY') < 0.05
-by.lmean.lnHM <- p.adjust(res$p.lmean.lnHM, method='BY') < 0.05
-by.disp.lnHM <- p.adjust(res$p.disp.lnHM, method='BY') < 0.05
-by.ldisp.lnHM <- p.adjust(res$p.ldisp.lnHM, method='BY') < 0.05
-q.mean.expHM <- qvalue(res$p.mean.expHM)$qval < 0.05
-q.lmean.expHM <- qvalue(res$p.lmean.expHM)$qval < 0.05
-q.disp.expHM <- qvalue(res$p.disp.expHM)$qval < 0.05
-q.ldisp.expHM <- qvalue(res$p.ldisp.expHM)$qval < 0.05
-q.mean.lnHM <- qvalue(res$p.mean.lnHM)$qval < 0.05
-q.lmean.lnHM <- qvalue(res$p.lmean.lnHM)$qval < 0.05
-q.disp.lnHM <- qvalue(res$p.disp.lnHM)$qval < 0.05
-q.ldisp.lnHM <- qvalue(res$p.ldisp.lnHM)$qval < 0.05
-
-tp.mean.expHM <- c(sum(raw.mean.expHM==1 & res$DE==1), sum(bh.mean.expHM==1 & res$DE==1), 
-                   sum(by.mean.expHM==1 & res$DE==1), sum(q.mean.expHM==1 & res$DE==1))
-tp.lmean.expHM <- c(sum(raw.lmean.expHM==1 & res$DE==1), sum(bh.lmean.expHM==1 & res$DE==1), 
-                    sum(by.lmean.expHM==1 & res$DE==1), sum(q.lmean.expHM==1 & res$DE==1))
-tp.disp.expHM <- c(sum(raw.disp.expHM==1 & res$DD==1), sum(bh.disp.expHM==1 & res$DD==1), 
-                   sum(by.disp.expHM==1 & res$DD==1), sum(q.disp.expHM==1 & res$DD==1))
-tp.ldisp.expHM <- c(sum(raw.ldisp.expHM==1 & res$DD==1), sum(bh.ldisp.expHM==1 & res$DD==1), 
-                    sum(by.ldisp.expHM==1 & res$DD==1), sum(q.ldisp.expHM==1 & res$DD==1))
-tp.mean.lnHM <- c(sum(raw.mean.lnHM==1 & res$DE==1), sum(bh.mean.lnHM==1 & res$DE==1), 
-                  sum(by.mean.lnHM==1 & res$DE==1), sum(q.mean.lnHM==1 & res$DE==1))
-tp.lmean.lnHM <- c(sum(raw.lmean.lnHM==1 & res$DE==1), sum(bh.lmean.lnHM==1 & res$DE==1), 
-                   sum(by.lmean.lnHM==1 & res$DE==1), sum(q.lmean.lnHM==1 & res$DE==1))
-tp.disp.lnHM <- c(sum(raw.disp.lnHM==1 & res$DD==1), sum(bh.disp.lnHM==1 & res$DD==1), 
-                  sum(by.disp.lnHM==1 & res$DD==1), sum(q.disp.lnHM==1 & res$DD==1))
-tp.ldisp.lnHM <- c(sum(raw.ldisp.lnHM==1 & res$DD==1), sum(bh.ldisp.lnHM==1 & res$DD==1), 
-                   sum(by.ldisp.lnHM==1 & res$DD==1), sum(q.ldisp.lnHM==1 & res$DD==1))
-fp.mean.expHM <- c(sum(raw.mean.expHM==1 & res$DE==0), sum(bh.mean.expHM==1 & res$DE==0), 
-                   sum(by.mean.expHM==1 & res$DE==0), sum(q.mean.expHM==1 & res$DE==0))
-fp.lmean.expHM <- c(sum(raw.lmean.expHM==1 & res$DE==0), sum(bh.lmean.expHM==1 & res$DE==0), 
-                    sum(by.lmean.expHM==1 & res$DE==0), sum(q.lmean.expHM==1 & res$DE==0))
-fp.disp.expHM <- c(sum(raw.disp.expHM==1 & res$DD==0), sum(bh.disp.expHM==1 & res$DD==0), 
-                   sum(by.disp.expHM==1 & res$DD==0), sum(q.disp.expHM==1 & res$DD==0))
-fp.ldisp.expHM <- c(sum(raw.ldisp.expHM==1 & res$DD==0), sum(bh.ldisp.expHM==1 & res$DD==0), 
-                    sum(by.ldisp.expHM==1 & res$DD==0), sum(q.ldisp.expHM==1 & res$DD==0))
-fp.mean.lnHM <- c(sum(raw.mean.lnHM==1 & res$DE==0), sum(bh.mean.lnHM==1 & res$DE==0), 
-                  sum(by.mean.lnHM==1 & res$DE==0), sum(q.mean.lnHM==1 & res$DE==0))
-fp.lmean.lnHM <- c(sum(raw.lmean.lnHM==1 & res$DE==0), sum(bh.lmean.lnHM==1 & res$DE==0), 
-                   sum(by.lmean.lnHM==1 & res$DE==0), sum(q.lmean.lnHM==1 & res$DE==0))
-fp.disp.lnHM <- c(sum(raw.disp.lnHM==1 & res$DD==0), sum(bh.disp.lnHM==1 & res$DD==0), 
-                  sum(by.disp.lnHM==1 & res$DD==0), sum(q.disp.lnHM==1 & res$DD==0))
-fp.ldisp.lnHM <- c(sum(raw.ldisp.lnHM==1 & res$DD==0), sum(bh.ldisp.lnHM==1 & res$DD==0), 
-                   sum(by.ldisp.lnHM==1 & res$DD==0), sum(q.ldisp.lnHM==1 & res$DD==0))
-fn.mean.expHM <- c(sum(raw.mean.expHM==0 & res$DE==1), sum(bh.mean.expHM==0 & res$DE==1), 
-                   sum(by.mean.expHM==0 & res$DE==1), sum(q.mean.expHM==0 & res$DE==1))
-fn.lmean.expHM <- c(sum(raw.lmean.expHM==0 & res$DE==1), sum(bh.lmean.expHM==0 & res$DE==1), 
-                    sum(by.lmean.expHM==0 & res$DE==1), sum(q.lmean.expHM==0 & res$DE==1))
-fn.disp.expHM <- c(sum(raw.disp.expHM==0 & res$DD==1), sum(bh.disp.expHM==0 & res$DD==1), 
-                   sum(by.disp.expHM==0 & res$DD==1), sum(q.disp.expHM==0 & res$DD==1))
-fn.ldisp.expHM <- c(sum(raw.ldisp.expHM==0 & res$DD==1), sum(bh.ldisp.expHM==0 & res$DD==1), 
-                    sum(by.ldisp.expHM==0 & res$DD==1), sum(q.ldisp.expHM==0 & res$DD==1))
-fn.mean.lnHM <- c(sum(raw.mean.lnHM==0 & res$DE==1), sum(bh.mean.lnHM==0 & res$DE==1), 
-                  sum(by.mean.lnHM==0 & res$DE==1), sum(q.mean.lnHM==0 & res$DE==1))
-fn.lmean.lnHM <- c(sum(raw.lmean.lnHM==0 & res$DE==1), sum(bh.lmean.lnHM==0 & res$DE==1), 
-                   sum(by.lmean.lnHM==0 & res$DE==1), sum(q.lmean.lnHM==0 & res$DE==1))
-fn.disp.lnHM <- c(sum(raw.disp.lnHM==0 & res$DD==1), sum(bh.disp.lnHM==0 & res$DD==1), 
-                  sum(by.disp.lnHM==0 & res$DD==1), sum(q.disp.lnHM==0 & res$DD==1))
-fn.ldisp.lnHM <- c(sum(raw.ldisp.lnHM==0 & res$DD==1), sum(bh.ldisp.lnHM==0 & res$DD==1), 
-                   sum(by.ldisp.lnHM==0 & res$DD==1), sum(q.ldisp.lnHM==0 & res$DD==1))
-tn.mean.expHM <- c(sum(raw.mean.expHM==0 & res$DE==0), sum(bh.mean.expHM==0 & res$DE==0), 
-                   sum(by.mean.expHM==0 & res$DE==0), sum(q.mean.expHM==0 & res$DE==0))
-tn.lmean.expHM <- c(sum(raw.lmean.expHM==0 & res$DE==0), sum(bh.lmean.expHM==0 & res$DE==0), 
-                    sum(by.lmean.expHM==0 & res$DE==0), sum(q.lmean.expHM==0 & res$DE==0))
-tn.disp.expHM <- c(sum(raw.disp.expHM==0 & res$DD==0), sum(bh.disp.expHM==0 & res$DD==0), 
-                   sum(by.disp.expHM==0 & res$DD==0), sum(q.disp.expHM==0 & res$DD==0))
-tn.ldisp.expHM <- c(sum(raw.ldisp.expHM==0 & res$DD==0), sum(bh.ldisp.expHM==0 & res$DD==0), 
-                    sum(by.ldisp.expHM==0 & res$DD==0), sum(q.ldisp.expHM==0 & res$DD==0))
-tn.mean.lnHM <- c(sum(raw.mean.lnHM==0 & res$DE==0), sum(bh.mean.lnHM==0 & res$DE==0), 
-                  sum(by.mean.lnHM==0 & res$DE==0), sum(q.mean.lnHM==0 & res$DE==0))
-tn.lmean.lnHM <- c(sum(raw.lmean.lnHM==0 & res$DE==0), sum(bh.lmean.lnHM==0 & res$DE==0), 
-                   sum(by.lmean.lnHM==0 & res$DE==0), sum(q.lmean.lnHM==0 & res$DE==0))
-tn.disp.lnHM <- c(sum(raw.disp.lnHM==0 & res$DD==0), sum(bh.disp.lnHM==0 & res$DD==0), 
-                  sum(by.disp.lnHM==0 & res$DD==0), sum(q.disp.lnHM==0 & res$DD==0))
-tn.ldisp.lnHM <- c(sum(raw.ldisp.lnHM==0 & res$DD==0), sum(bh.ldisp.lnHM==0 & res$DD==0), 
-                   sum(by.ldisp.lnHM==0 & res$DD==0), sum(q.ldisp.lnHM==0 & res$DD==0))
-
-fdr.mean.expHM <- fp.mean.expHM/(fp.mean.expHM+tp.mean.expHM)
-fdr.lmean.expHM <- fp.lmean.expHM/(fp.lmean.expHM+tp.lmean.expHM)
-fdr.disp.expHM <- fp.disp.expHM/(fp.disp.expHM+tp.disp.expHM)
-fdr.ldisp.expHM <- fp.ldisp.expHM/(fp.ldisp.expHM+tp.ldisp.expHM)
-fdr.mean.lnHM <- fp.mean.lnHM/(fp.mean.lnHM+tp.mean.lnHM)
-fdr.lmean.lnHM <- fp.lmean.lnHM/(fp.lmean.lnHM+tp.lmean.lnHM)
-fdr.disp.lnHM <- fp.disp.lnHM/(fp.disp.lnHM+tp.disp.lnHM)
-fdr.ldisp.lnHM <- fp.ldisp.lnHM/(fp.ldisp.lnHM+tp.ldisp.lnHM)
-tpr.mean.expHM <- tp.mean.expHM/(tp.mean.expHM+fn.mean.expHM)
-tpr.lmean.expHM <- tp.lmean.expHM/(tp.lmean.expHM+fn.lmean.expHM)
-tpr.disp.expHM <- tp.disp.expHM/(tp.disp.expHM+fn.disp.expHM)
-tpr.ldisp.expHM <- tp.ldisp.expHM/(tp.ldisp.expHM+fn.ldisp.expHM)
-tpr.mean.lnHM <- tp.mean.lnHM/(tp.mean.lnHM+fn.mean.lnHM)
-tpr.lmean.lnHM <- tp.lmean.lnHM/(tp.lmean.lnHM+fn.lmean.lnHM)
-tpr.disp.lnHM <- tp.disp.lnHM/(tp.disp.lnHM+fn.disp.lnHM)
-tpr.ldisp.lnHM <- tp.ldisp.lnHM/(tp.ldisp.lnHM+fn.ldisp.lnHM)
-
-data.frame(method=c('none','BY','BH','q'), 
-           fdr.mean.expHM, tpr.mean.expHM, fdr.lmean.expHM, tpr.lmean.expHM, 
-           fdr.mean.lnHM, tpr.mean.lnHM, fdr.lmean.lnHM, tpr.lmean.lnHM)
-# q best FDR control for mean but slightly liberal for lmean; BY best for lmean and always better than BH.
-# TPR only slightly better for q than BY, both much better than BH.
-data.frame(method=c('none','BY','BH','q'), 
-           fdr.disp.expHM, tpr.disp.expHM, fdr.ldisp.expHM, tpr.ldisp.expHM, 
-           fdr.disp.lnHM, tpr.disp.lnHM, fdr.ldisp.lnHM, tpr.ldisp.lnHM)
-# No positives for any method.
-
-pr.mean.expHM <- prediction(1-res$p.mean.expHM, res$DE); pr.lmean.expHM <- prediction(1-res$p.lmean.expHM, res$DE)
-pr.disp.expHM <- prediction(1-res$p.disp.expHM, res$DD); pr.ldisp.expHM <- prediction(1-res$p.ldisp.expHM, res$DD)
-pr.mean.lnHM <- prediction(1-res$p.mean.lnHM, res$DE); pr.lmean.lnHM <- prediction(1-res$p.lmean.lnHM, res$DE)
-pr.disp.lnHM <- prediction(1-res$p.disp.lnHM, res$DD); pr.ldisp.lnHM <- prediction(1-res$p.ldisp.lnHM, res$DD)
-auc.mean.expHM <- performance(pr.mean.expHM, measure='auc')@y.values[[1]]
-auc.lmean.expHM <- performance(pr.lmean.expHM, measure='auc')@y.values[[1]]
-auc.disp.expHM <- performance(pr.disp.expHM, measure='auc')@y.values[[1]]
-auc.ldisp.expHM <- performance(pr.ldisp.expHM, measure='auc')@y.values[[1]]
-auc.mean.lnHM <- performance(pr.mean.lnHM, measure='auc')@y.values[[1]]
-auc.lmean.lnHM <- performance(pr.lmean.lnHM, measure='auc')@y.values[[1]]
-auc.disp.lnHM <- performance(pr.disp.lnHM, measure='auc')@y.values[[1]]
-auc.ldisp.lnHM <- performance(pr.ldisp.lnHM, measure='auc')@y.values[[1]]
-c(auc.mean.expHM, auc.lmean.expHM, auc.mean.lnHM, auc.lmean.lnHM)
-c(auc.disp.expHM, auc.ldisp.expHM, auc.disp.lnHM, auc.ldisp.lnHM)
-
-
-
-
-
 names.edgeR <- c('ql.edgeR', 'ql.lfc1.edgeR', 'ql.lfc2.edgeR', 'lr.edgeR', 'lr.lfc1.edgeR', 'lr.lfc2.edgeR', 'et.edgeR')
 names.DESeq2 <- c('noif.DESeq', 'if.DESeq', 'lfc1.DESeq', 'lfc2.DESeq')
 names.voom <- c('voom', 'lfc1.voom', 'lfc2.voom')
@@ -226,13 +104,13 @@ names.MDSeq <- c('mean.zi.MDSeq', 'mean.nozi.MDSeq', 'mean.zi.lfc1.MDSeq', 'mean
                  'mean.zi.lfc2.MDSeq', 'mean.nozi.lfc2.MDSeq', 
                  'disp.zi.MDSeq', 'disp.nozi.MDSeq', 'disp.zi.lfc1.MDSeq', 'disp.nozi.lfc1.MDSeq', 
                  'disp.zi.lfc2.MDSeq', 'disp.nozi.lfc2.MDSeq')
-names.expHM <- c('hmm.expHM', 'mean.expHM', 'lmean.expHM', 'mean.lfc1.expHM', 'mean.lfc2.expHM', 
+names.expHM <- c('expHM', 'mean.expHM', 'lmean.expHM', 'mean.lfc1.expHM', 'mean.lfc2.expHM', 
                  'disp.expHM', 'ldisp.expHM', 'disp.lfc1.expHM', 'disp.lfc2.expHM')
-names.lnHM <- c('hmm.lnHM', 'mean.lnHM', 'lmean.lnHM', 'mean.lfc1.lnHM', 'mean.lfc2.lnHM', 
+names.lnHM <- c('lnHM', 'mean.lnHM', 'lmean.lnHM', 'mean.lfc1.lnHM', 'mean.lfc2.lnHM', 
                 'disp.lnHM', 'ldisp.lnHM', 'disp.lfc1.lnHM', 'disp.lfc2.lnHM')
 results.list <- c(names.edgeR, names.DESeq2, names.voom, names.DSS, names.baySeq, names.ShrinkBayes, 
                   names.MDSeq, names.expHM, names.lnHM)
-for (i in c(names.edgeR, names.DESeq2, names.voom, names.DSS, names.baySeq, names.MDSeq)) {
+for (i in c(names.edgeR, names.DESeq2, names.voom, names.DSS, names.MDSeq)) {
   for (j in c('fpr.raw.','fdr.raw.','tpr.raw.','fpr.fdr.','fdr.fdr.','tpr.fdr.')) {
     assign(paste0(j,i), numeric(50))
   }
@@ -242,10 +120,15 @@ for (i in names.DSS) {
     assign(paste0(j,i), numeric(50))
   }
 }
-for (i in names.ShrinkBayes) {
-  for (j in c('fpr.lfdr.','fdr.lfdr.','tpr.lfdr.','fpr.bfdr.','fdr.bfdr.','tpr.bfdr.')) {
+for (i in names.baySeq) {
+  for (j in c('fpr.5.','fdr.5.','tpr.5.','fpr.fdr.','fdr.fdr.','tpr.fdr.')) {
     assign(paste0(j,i), numeric(50))
   }
+}
+for (i in names.ShrinkBayes) { 
+  for (j in c('fpr.lfdr.','fdr.lfdr.','tpr.lfdr.','fpr.bfdr.','fdr.bfdr.','tpr.bfdr.')) {
+    assign(paste0(j,i), numeric(50))
+  } # Only for DEDD2
 }
 for (i in c(names.expHM[1],names.lnHM[1])) {
   for (j in c('fpr.5.','fdr.5.','tpr.5.','fpr.thr.','fdr.thr.','tpr.thr.','fpr.bfdr.','fdr.bfdr.','tpr.bfdr.')) {
@@ -264,17 +147,75 @@ for (i in results.list) {
   assign(paste0('false.discoveries.',i), matrix(nrow=50, ncol=20000))
 }
 for (i in 1:50) {
-  import <- paste0('results.DEDD2.',i,'.rds')
+  import <- paste0('results.DEDD2.',i,'.all.rds')
   res <- readRDS(here('Results/DEDD compcodeR data results July 2019',import))
   DE <- factor(res$DE, levels=c('1','0')); DD <- factor(res$DD, levels=c('1','0'))
+  DEDD <- factor(as.numeric(res$DE==1 | res$DD==1), levels=c('1','0'))
   lfcm1 <- factor(as.numeric(res$lfcm1), levels=c('1','0'))
   lfcm2 <- factor(as.numeric(res$lfcm2), levels=c('1','0'))
   lfcd1 <- factor(as.numeric(res$lfcd1), levels=c('1','0'))
   lfcd2 <- factor(as.numeric(res$lfcd2), levels=c('1','0'))
-  for (j in names.edgeR[-1]) {
+  bh.notrend.DSS <- p.adjust(res$p.notrend.DSS, method='BH')
+  bh.trend.DSS <- p.adjust(res$p.trend.DSS, method='BH')
+  q.mean.expHM <- qvalue(res$p.mean.expHM)$qval
+  for (j in c(names.expHM[-1], names.lnHM[-1])) {
+    assign(paste0('bh.',j), p.adjust(get(paste0('p.',j), res), method='BH'))
+    assign(paste0('by.',j), p.adjust(get(paste0('p.',j), res), method='BY'))
+    assign(paste0('q.',j), qvalue(get(paste0('p.',j), res))$qval)
+  }
+  thr.expHM <- sort(res$prob.expHM, decreasing=T)[round(nrow(res$data@count.matrix)*res$prop.expHM)]
+  thr.lnHM <- sort(res$prob.lnHM, decreasing=T)[round(nrow(res$data@count.matrix)*res$prop.lnHM)]
+  for (j in c(names.edgeR, names.DESeq2, names.voom, names.DSS, names.MDSeq)) {
     assign(paste0('call.raw.',j), factor(as.numeric(get(paste0('p.',j), res) < 0.05), levels=c('1','0')))
     assign(paste0('call.fdr.',j), factor(as.numeric(get(paste0('q.',j), res) < 0.05), levels=c('1','0')))
-    if (grepl('lfc1',j)) {
+    if (grepl('disp',j)) {
+      if (grepl('lfc1',j)) {
+        assign(paste0('pred.',j), prediction(1-get(paste0('p.',j), res), lfcd1))
+        assign(paste0('fpr.raw.',j), `[<-`(get(paste0('fpr.raw.',j)), i, 
+                                           value=1-specificity(get(paste0('call.raw.',j)), lfcd1)))
+        assign(paste0('fpr.fdr.',j), `[<-`(get(paste0('fpr.fdr.',j)), i, 
+                                           value=1-specificity(get(paste0('call.fdr.',j)), lfcd1)))
+        assign(paste0('fdr.raw.',j), `[<-`(get(paste0('fdr.raw.',j)), i, 
+                                           value=1-precision(get(paste0('call.raw.',j)), lfcd1)))
+        assign(paste0('fdr.fdr.',j), `[<-`(get(paste0('fdr.fdr.',j)), i, 
+                                           value=1-precision(get(paste0('call.fdr.',j)), lfcd1)))
+        assign(paste0('tpr.raw.',j), `[<-`(get(paste0('tpr.raw.',j)), i, 
+                                           value=sensitivity(get(paste0('call.raw.',j)), lfcd1)))
+        assign(paste0('tpr.fdr.',j), `[<-`(get(paste0('tpr.fdr.',j)), i, 
+                                           value=sensitivity(get(paste0('call.fdr.',j)), lfcd1)))
+      }
+      else if (grepl('lfc2',j)) {
+        assign(paste0('pred.',j), prediction(1-get(paste0('p.',j), res), lfcd2))
+        assign(paste0('fpr.raw.',j), `[<-`(get(paste0('fpr.raw.',j)), i, 
+                                           value=1-specificity(get(paste0('call.raw.',j)), lfcd2)))
+        assign(paste0('fpr.fdr.',j), `[<-`(get(paste0('fpr.fdr.',j)), i, 
+                                           value=1-specificity(get(paste0('call.fdr.',j)), lfcd2)))
+        assign(paste0('fdr.raw.',j), `[<-`(get(paste0('fdr.raw.',j)), i, 
+                                           value=1-precision(get(paste0('call.raw.',j)), lfcd2)))
+        assign(paste0('fdr.fdr.',j), `[<-`(get(paste0('fdr.fdr.',j)), i, 
+                                           value=1-precision(get(paste0('call.fdr.',j)), lfcd2)))
+        assign(paste0('tpr.raw.',j), `[<-`(get(paste0('tpr.raw.',j)), i, 
+                                           value=sensitivity(get(paste0('call.raw.',j)), lfcd2)))
+        assign(paste0('tpr.fdr.',j), `[<-`(get(paste0('tpr.fdr.',j)), i, 
+                                           value=sensitivity(get(paste0('call.fdr.',j)), lfcd2)))
+      }
+      else {
+        assign(paste0('pred.',j), prediction(1-get(paste0('p.',j), res), DD))
+        assign(paste0('fpr.raw.',j), `[<-`(get(paste0('fpr.raw.',j)), i, 
+                                           value=1-specificity(get(paste0('call.raw.',j)), DD)))
+        assign(paste0('fpr.fdr.',j), `[<-`(get(paste0('fpr.fdr.',j)), i, 
+                                           value=1-specificity(get(paste0('call.fdr.',j)), DD)))
+        assign(paste0('fdr.raw.',j), `[<-`(get(paste0('fdr.raw.',j)), i, 
+                                           value=1-precision(get(paste0('call.raw.',j)), DD)))
+        assign(paste0('fdr.fdr.',j), `[<-`(get(paste0('fdr.fdr.',j)), i, 
+                                           value=1-precision(get(paste0('call.fdr.',j)), DD)))
+        assign(paste0('tpr.raw.',j), `[<-`(get(paste0('tpr.raw.',j)), i, 
+                                           value=sensitivity(get(paste0('call.raw.',j)), DD)))
+        assign(paste0('tpr.fdr.',j), `[<-`(get(paste0('tpr.fdr.',j)), i, 
+                                           value=sensitivity(get(paste0('call.fdr.',j)), DD)))
+      }
+    }
+    else if (grepl('lfc1',j)) {
       assign(paste0('pred.',j), prediction(1-get(paste0('p.',j), res), lfcm1))
       assign(paste0('fpr.raw.',j), `[<-`(get(paste0('fpr.raw.',j)), i, 
                                          value=1-specificity(get(paste0('call.raw.',j)), lfcm1)))
@@ -322,30 +263,479 @@ for (i in 1:50) {
     assign(paste0('auc.',j), `[<-`(get(paste0('auc.',j)), i, 
                                    value=performance(get(paste0('pred.',j)), measure='auc')@y.values[[1]]))
     assign(paste0('false.discoveries.',j), `[<-`(get(paste0('false.discoveries.',j)), i,, 
-                                                  value=c(get(paste0('pred.',j))@fp[[1]], 
-                                                          rep(NA, 20000-length(get(paste0('pred.',j))@fp[[1]])))))
+                                                 value=c(get(paste0('pred.',j))@fp[[1]], 
+                                                         rep(NA, 20000-length(get(paste0('pred.',j))@fp[[1]])))))
     assign(paste0('discoveries.',j), `[<-`(get(paste0('discoveries.',j)), i,, 
-                                                  value=c(get(paste0('pred.',j))@n.pos.pred[[1]], 
-                                                          rep(NA, 20000-length(get(paste0('pred.',j))@n.pos.pred[[1]])))))
+                                           value=c(get(paste0('pred.',j))@n.pos.pred[[1]], 
+                                                   rep(NA, 20000-length(get(paste0('pred.',j))@n.pos.pred[[1]])))))
+  }
+  for (j in names.DSS) {
+    assign(paste0('call.bh.',j), factor(as.numeric(get(paste0('bh.',j)) < 0.05), levels=c('1','0')))
+    assign(paste0('call.lfdr.',j), factor(as.numeric(get(paste0('lfdr.',j), res) < 0.05), levels=c('1','0')))
+    assign(paste0('fpr.bh.',j), `[<-`(get(paste0('fpr.bh.',j)), i, 
+                                      value=1-specificity(get(paste0('call.bh.',j)), DE)))
+    assign(paste0('fpr.lfdr.',j), `[<-`(get(paste0('fpr.lfdr.',j)), i, 
+                                        value=1-specificity(get(paste0('call.lfdr.',j)), DE)))
+    assign(paste0('fdr.bh.',j), `[<-`(get(paste0('fdr.bh.',j)), i, 
+                                      value=1-precision(get(paste0('call.bh.',j)), DE)))
+    assign(paste0('fdr.lfdr.',j), `[<-`(get(paste0('fdr.lfdr.',j)), i, 
+                                        value=1-precision(get(paste0('call.lfdr.',j)), DE)))
+    assign(paste0('tpr.bh.',j), `[<-`(get(paste0('tpr.bh.',j)), i, 
+                                      value=sensitivity(get(paste0('call.bh.',j)), DE)))
+    assign(paste0('tpr.lfdr.',j), `[<-`(get(paste0('tpr.lfdr.',j)), i, 
+                                        value=sensitivity(get(paste0('call.lfdr.',j)), DE)))
+  }
+  for (j in names.baySeq) {
+    assign(paste0('call.5.',j), factor(as.numeric(get(paste0('prob.',j), res) > 0.5), levels=c('1','0')))
+    assign(paste0('call.fdr.',j), factor(as.numeric(get(paste0('q.',j), res) < 0.05), levels=c('1','0')))
+    assign(paste0('pred.',j), prediction(get(paste0('prob.',j), res), DE))
+    assign(paste0('fpr.5.',j), `[<-`(get(paste0('fpr.5.',j)), i, 
+                                     value=1-specificity(get(paste0('call.5.',j)), DE)))
+    assign(paste0('fpr.fdr.',j), `[<-`(get(paste0('fpr.fdr.',j)), i, 
+                                       value=1-specificity(get(paste0('call.fdr.',j)), DE)))
+    assign(paste0('fdr.5.',j), `[<-`(get(paste0('fdr.5.',j)), i, 
+                                     value=1-precision(get(paste0('call.5.',j)), DE)))
+    assign(paste0('fdr.fdr.',j), `[<-`(get(paste0('fdr.fdr.',j)), i, 
+                                       value=1-precision(get(paste0('call.fdr.',j)), DE)))
+    assign(paste0('tpr.5.',j), `[<-`(get(paste0('tpr.5.',j)), i, 
+                                     value=sensitivity(get(paste0('call.5.',j)), DE)))
+    assign(paste0('tpr.fdr.',j), `[<-`(get(paste0('tpr.fdr.',j)), i, 
+                                       value=sensitivity(get(paste0('call.fdr.',j)), DE)))
+    assign(paste0('auc.',j), `[<-`(get(paste0('auc.',j)), i, 
+                                   value=performance(get(paste0('pred.',j)), measure='auc')@y.values[[1]]))
+    assign(paste0('false.discoveries.',j), `[<-`(get(paste0('false.discoveries.',j)), i,, 
+                                                 value=c(get(paste0('pred.',j))@fp[[1]], 
+                                                         rep(NA, 20000-length(get(paste0('pred.',j))@fp[[1]])))))
+    assign(paste0('discoveries.',j), `[<-`(get(paste0('discoveries.',j)), i,, 
+                                           value=c(get(paste0('pred.',j))@n.pos.pred[[1]], 
+                                                   rep(NA, 20000-length(get(paste0('pred.',j))@n.pos.pred[[1]])))))
+  }
+  for (j in names.ShrinkBayes) {
+    assign(paste0('call.lfdr.',j), factor(as.numeric(get(paste0('lfdr.',j), res) < 0.05), levels=c('1','0')))
+    assign(paste0('call.bfdr.',j), factor(as.numeric(get(paste0('bfdr.',j), res) < 0.05), levels=c('1','0')))
+    if (grepl('lfc1',j)) {
+      assign(paste0('pred.',j), prediction(1-get(paste0('lfdr.',j), res), lfcm1))
+      assign(paste0('fpr.lfdr.',j), `[<-`(get(paste0('fpr.lfdr.',j)), i, 
+                                          value=1-specificity(get(paste0('call.lfdr.',j)), lfcm1)))
+      assign(paste0('fpr.bfdr.',j), `[<-`(get(paste0('fpr.bfdr.',j)), i, 
+                                          value=1-specificity(get(paste0('call.bfdr.',j)), lfcm1)))
+      assign(paste0('fdr.lfdr.',j), `[<-`(get(paste0('fdr.lfdr.',j)), i, 
+                                          value=1-precision(get(paste0('call.lfdr.',j)), lfcm1)))
+      assign(paste0('fdr.bfdr.',j), `[<-`(get(paste0('fdr.bfdr.',j)), i, 
+                                          value=1-precision(get(paste0('call.bfdr.',j)), lfcm1)))
+      assign(paste0('tpr.lfdr.',j), `[<-`(get(paste0('tpr.lfdr.',j)), i, 
+                                          value=sensitivity(get(paste0('call.lfdr.',j)), lfcm1)))
+      assign(paste0('tpr.bfdr.',j), `[<-`(get(paste0('tpr.bfdr.',j)), i, 
+                                          value=sensitivity(get(paste0('call.bfdr.',j)), lfcm1)))
+    }
+    else if (grepl('lfc2',j)) {
+      assign(paste0('pred.',j), prediction(1-get(paste0('lfdr.',j), res), lfcm2))
+      assign(paste0('fpr.lfdr.',j), `[<-`(get(paste0('fpr.lfdr.',j)), i, 
+                                          value=1-specificity(get(paste0('call.lfdr.',j)), lfcm2)))
+      assign(paste0('fpr.bfdr.',j), `[<-`(get(paste0('fpr.bfdr.',j)), i, 
+                                          value=1-specificity(get(paste0('call.bfdr.',j)), lfcm2)))
+      assign(paste0('fdr.lfdr.',j), `[<-`(get(paste0('fdr.lfdr.',j)), i, 
+                                          value=1-precision(get(paste0('call.lfdr.',j)), lfcm2)))
+      assign(paste0('fdr.bfdr.',j), `[<-`(get(paste0('fdr.bfdr.',j)), i, 
+                                          value=1-precision(get(paste0('call.bfdr.',j)), lfcm2)))
+      assign(paste0('tpr.lfdr.',j), `[<-`(get(paste0('tpr.lfdr.',j)), i, 
+                                          value=sensitivity(get(paste0('call.lfdr.',j)), lfcm2)))
+      assign(paste0('tpr.bfdr.',j), `[<-`(get(paste0('tpr.bfdr.',j)), i, 
+                                          value=sensitivity(get(paste0('call.bfdr.',j)), lfcm2)))
+    }
+    else {
+      assign(paste0('pred.',j), prediction(1-get(paste0('lfdr.',j), res), DE))
+      assign(paste0('fpr.lfdr.',j), `[<-`(get(paste0('fpr.lfdr.',j)), i, 
+                                          value=1-specificity(get(paste0('call.lfdr.',j)), DE)))
+      assign(paste0('fpr.bfdr.',j), `[<-`(get(paste0('fpr.bfdr.',j)), i, 
+                                          value=1-specificity(get(paste0('call.bfdr.',j)), DE)))
+      assign(paste0('fdr.lfdr.',j), `[<-`(get(paste0('fdr.lfdr.',j)), i, 
+                                          value=1-precision(get(paste0('call.lfdr.',j)), DE)))
+      assign(paste0('fdr.bfdr.',j), `[<-`(get(paste0('fdr.bfdr.',j)), i, 
+                                          value=1-precision(get(paste0('call.bfdr.',j)), DE)))
+      assign(paste0('tpr.lfdr.',j), `[<-`(get(paste0('tpr.lfdr.',j)), i, 
+                                          value=sensitivity(get(paste0('call.lfdr.',j)), DE)))
+      assign(paste0('tpr.bfdr.',j), `[<-`(get(paste0('tpr.bfdr.',j)), i, 
+                                          value=sensitivity(get(paste0('call.bfdr.',j)), DE)))
+    }
+    assign(paste0('auc.',j), `[<-`(get(paste0('auc.',j)), i, 
+                                   value=performance(get(paste0('pred.',j)), measure='auc')@y.values[[1]]))
+    assign(paste0('false.discoveries.',j), `[<-`(get(paste0('false.discoveries.',j)), i,, 
+                                                 value=c(get(paste0('pred.',j))@fp[[1]], 
+                                                         rep(NA, 20000-length(get(paste0('pred.',j))@fp[[1]])))))
+    assign(paste0('discoveries.',j), `[<-`(get(paste0('discoveries.',j)), i,, 
+                                           value=c(get(paste0('pred.',j))@n.pos.pred[[1]], 
+                                                   rep(NA, 20000-length(get(paste0('pred.',j))@n.pos.pred[[1]])))))
+  }
+  for (j in c(names.expHM[-1],names.lnHM[-1])) {
+    assign(paste0('call.raw.',j), factor(as.numeric(get(paste0('p.',j), res) < 0.05), levels=c('1','0')))
+    assign(paste0('call.q.',j), factor(as.numeric(get(paste0('q.',j)) < 0.05), levels=c('1','0')))
+    assign(paste0('call.by.',j), factor(as.numeric(get(paste0('by.',j)) < 0.05), levels=c('1','0')))
+    assign(paste0('call.bh.',j), factor(as.numeric(get(paste0('bh.',j)) < 0.05), levels=c('1','0')))
+    if (grepl('disp',j)) {
+      if (grepl('lfc1',j)) {
+        assign(paste0('pred.',j), prediction(1-get(paste0('p.',j), res), lfcd1))
+        assign(paste0('fpr.raw.',j), `[<-`(get(paste0('fpr.raw.',j)), i, 
+                                           value=1-specificity(get(paste0('call.raw.',j)), lfcd1)))
+        assign(paste0('fpr.q.',j), `[<-`(get(paste0('fpr.q.',j)), i, 
+                                           value=1-specificity(get(paste0('call.q.',j)), lfcd1)))
+        assign(paste0('fpr.by.',j), `[<-`(get(paste0('fpr.by.',j)), i, 
+                                          value=1-specificity(get(paste0('call.by.',j)), lfcd1)))
+        assign(paste0('fpr.bh.',j), `[<-`(get(paste0('fpr.bh.',j)), i, 
+                                          value=1-specificity(get(paste0('call.bh.',j)), lfcd1)))
+        assign(paste0('fdr.raw.',j), `[<-`(get(paste0('fdr.raw.',j)), i, 
+                                           value=1-precision(get(paste0('call.raw.',j)), lfcd1)))
+        assign(paste0('fdr.q.',j), `[<-`(get(paste0('fdr.q.',j)), i, 
+                                           value=1-precision(get(paste0('call.q.',j)), lfcd1)))
+        assign(paste0('fdr.by.',j), `[<-`(get(paste0('fdr.by.',j)), i, 
+                                          value=1-precision(get(paste0('call.by.',j)), lfcd1)))
+        assign(paste0('fdr.bh.',j), `[<-`(get(paste0('fdr.bh.',j)), i, 
+                                          value=1-precision(get(paste0('call.bh.',j)), lfcd1)))
+        assign(paste0('tpr.raw.',j), `[<-`(get(paste0('tpr.raw.',j)), i, 
+                                           value=sensitivity(get(paste0('call.raw.',j)), lfcd1)))
+        assign(paste0('tpr.q.',j), `[<-`(get(paste0('tpr.q.',j)), i, 
+                                           value=sensitivity(get(paste0('call.q.',j)), lfcd1)))
+        assign(paste0('tpr.by.',j), `[<-`(get(paste0('tpr.by.',j)), i, 
+                                          value=sensitivity(get(paste0('call.by.',j)), lfcd1)))
+        assign(paste0('tpr.bh.',j), `[<-`(get(paste0('tpr.bh.',j)), i, 
+                                          value=sensitivity(get(paste0('call.bh.',j)), lfcd1)))
+      }
+      else if (grepl('lfc2',j)) {
+        assign(paste0('pred.',j), prediction(1-get(paste0('p.',j), res), lfcd2))
+        assign(paste0('fpr.raw.',j), `[<-`(get(paste0('fpr.raw.',j)), i, 
+                                           value=1-specificity(get(paste0('call.raw.',j)), lfcd2)))
+        assign(paste0('fpr.q.',j), `[<-`(get(paste0('fpr.q.',j)), i, 
+                                           value=1-specificity(get(paste0('call.q.',j)), lfcd2)))
+        assign(paste0('fpr.by.',j), `[<-`(get(paste0('fpr.by.',j)), i, 
+                                          value=1-specificity(get(paste0('call.by.',j)), lfcd2)))
+        assign(paste0('fpr.bh.',j), `[<-`(get(paste0('fpr.bh.',j)), i, 
+                                          value=1-specificity(get(paste0('call.bh.',j)), lfcd2)))
+        assign(paste0('fdr.raw.',j), `[<-`(get(paste0('fdr.raw.',j)), i, 
+                                           value=1-precision(get(paste0('call.raw.',j)), lfcd2)))
+        assign(paste0('fdr.q.',j), `[<-`(get(paste0('fdr.q.',j)), i, 
+                                           value=1-precision(get(paste0('call.q.',j)), lfcd2)))
+        assign(paste0('fdr.by.',j), `[<-`(get(paste0('fdr.by.',j)), i, 
+                                          value=1-precision(get(paste0('call.by.',j)), lfcd2)))
+        assign(paste0('fdr.bh.',j), `[<-`(get(paste0('fdr.bh.',j)), i, 
+                                          value=1-precision(get(paste0('call.bh.',j)), lfcd2)))
+        assign(paste0('tpr.raw.',j), `[<-`(get(paste0('tpr.raw.',j)), i, 
+                                           value=sensitivity(get(paste0('call.raw.',j)), lfcd2)))
+        assign(paste0('tpr.q.',j), `[<-`(get(paste0('tpr.q.',j)), i, 
+                                           value=sensitivity(get(paste0('call.q.',j)), lfcd2)))
+        assign(paste0('tpr.by.',j), `[<-`(get(paste0('tpr.by.',j)), i, 
+                                          value=sensitivity(get(paste0('call.by.',j)), lfcd2)))
+        assign(paste0('tpr.bh.',j), `[<-`(get(paste0('tpr.bh.',j)), i, 
+                                          value=sensitivity(get(paste0('call.bh.',j)), lfcd2)))
+      }
+      else {
+        assign(paste0('pred.',j), prediction(1-get(paste0('p.',j), res), DD))
+        assign(paste0('fpr.raw.',j), `[<-`(get(paste0('fpr.raw.',j)), i, 
+                                           value=1-specificity(get(paste0('call.raw.',j)), DD)))
+        assign(paste0('fpr.q.',j), `[<-`(get(paste0('fpr.q.',j)), i, 
+                                           value=1-specificity(get(paste0('call.q.',j)), DD)))
+        assign(paste0('fpr.by.',j), `[<-`(get(paste0('fpr.by.',j)), i, 
+                                          value=1-specificity(get(paste0('call.by.',j)), DD)))
+        assign(paste0('fpr.bh.',j), `[<-`(get(paste0('fpr.bh.',j)), i, 
+                                          value=1-specificity(get(paste0('call.bh.',j)), DD)))
+        assign(paste0('fdr.raw.',j), `[<-`(get(paste0('fdr.raw.',j)), i, 
+                                           value=1-precision(get(paste0('call.raw.',j)), DD)))
+        assign(paste0('fdr.q.',j), `[<-`(get(paste0('fdr.q.',j)), i, 
+                                           value=1-precision(get(paste0('call.q.',j)), DD)))
+        assign(paste0('fdr.by.',j), `[<-`(get(paste0('fdr.by.',j)), i, 
+                                          value=1-precision(get(paste0('call.by.',j)), DD)))
+        assign(paste0('fdr.bh.',j), `[<-`(get(paste0('fdr.bh.',j)), i, 
+                                          value=1-precision(get(paste0('call.bh.',j)), DD)))
+        assign(paste0('tpr.raw.',j), `[<-`(get(paste0('tpr.raw.',j)), i, 
+                                           value=sensitivity(get(paste0('call.raw.',j)), DD)))
+        assign(paste0('tpr.q.',j), `[<-`(get(paste0('tpr.q.',j)), i, 
+                                           value=sensitivity(get(paste0('call.q.',j)), DD)))
+        assign(paste0('tpr.by.',j), `[<-`(get(paste0('tpr.by.',j)), i, 
+                                          value=sensitivity(get(paste0('call.by.',j)), DD)))
+        assign(paste0('tpr.bh.',j), `[<-`(get(paste0('tpr.bh.',j)), i, 
+                                          value=sensitivity(get(paste0('call.bh.',j)), DD)))
+      }
+    }
+    else if (grepl('lfc1',j)) {
+      assign(paste0('pred.',j), prediction(1-get(paste0('p.',j), res), lfcm1))
+      assign(paste0('fpr.raw.',j), `[<-`(get(paste0('fpr.raw.',j)), i, 
+                                         value=1-specificity(get(paste0('call.raw.',j)), lfcm1)))
+      assign(paste0('fpr.q.',j), `[<-`(get(paste0('fpr.q.',j)), i, 
+                                         value=1-specificity(get(paste0('call.q.',j)), lfcm1)))
+      assign(paste0('fpr.by.',j), `[<-`(get(paste0('fpr.by.',j)), i, 
+                                        value=1-specificity(get(paste0('call.by.',j)), lfcm1)))
+      assign(paste0('fpr.bh.',j), `[<-`(get(paste0('fpr.bh.',j)), i, 
+                                        value=1-specificity(get(paste0('call.bh.',j)), lfcm1)))
+      assign(paste0('fdr.raw.',j), `[<-`(get(paste0('fdr.raw.',j)), i, 
+                                         value=1-precision(get(paste0('call.raw.',j)), lfcm1)))
+      assign(paste0('fdr.q.',j), `[<-`(get(paste0('fdr.q.',j)), i, 
+                                         value=1-precision(get(paste0('call.q.',j)), lfcm1)))
+      assign(paste0('fdr.by.',j), `[<-`(get(paste0('fdr.by.',j)), i, 
+                                        value=1-precision(get(paste0('call.by.',j)), lfcm1)))
+      assign(paste0('fdr.bh.',j), `[<-`(get(paste0('fdr.bh.',j)), i, 
+                                        value=1-precision(get(paste0('call.bh.',j)), lfcm1)))
+      assign(paste0('tpr.raw.',j), `[<-`(get(paste0('tpr.raw.',j)), i, 
+                                         value=sensitivity(get(paste0('call.raw.',j)), lfcm1)))
+      assign(paste0('tpr.q.',j), `[<-`(get(paste0('tpr.q.',j)), i, 
+                                         value=sensitivity(get(paste0('call.q.',j)), lfcm1)))
+      assign(paste0('tpr.by.',j), `[<-`(get(paste0('tpr.by.',j)), i, 
+                                        value=sensitivity(get(paste0('call.by.',j)), lfcm1)))
+      assign(paste0('tpr.bh.',j), `[<-`(get(paste0('tpr.bh.',j)), i, 
+                                        value=sensitivity(get(paste0('call.bh.',j)), lfcm1)))
+    }
+    else if (grepl('lfc2',j)) {
+      assign(paste0('pred.',j), prediction(1-get(paste0('p.',j), res), lfcm2))
+      assign(paste0('fpr.raw.',j), `[<-`(get(paste0('fpr.raw.',j)), i, 
+                                         value=1-specificity(get(paste0('call.raw.',j)), lfcm2)))
+      assign(paste0('fpr.q.',j), `[<-`(get(paste0('fpr.q.',j)), i, 
+                                         value=1-specificity(get(paste0('call.q.',j)), lfcm2)))
+      assign(paste0('fpr.by.',j), `[<-`(get(paste0('fpr.by.',j)), i, 
+                                        value=1-specificity(get(paste0('call.by.',j)), lfcm2)))
+      assign(paste0('fpr.bh.',j), `[<-`(get(paste0('fpr.bh.',j)), i, 
+                                        value=1-specificity(get(paste0('call.bh.',j)), lfcm2)))
+      assign(paste0('fdr.raw.',j), `[<-`(get(paste0('fdr.raw.',j)), i, 
+                                         value=1-precision(get(paste0('call.raw.',j)), lfcm2)))
+      assign(paste0('fdr.q.',j), `[<-`(get(paste0('fdr.q.',j)), i, 
+                                         value=1-precision(get(paste0('call.q.',j)), lfcm2)))
+      assign(paste0('fdr.by.',j), `[<-`(get(paste0('fdr.by.',j)), i, 
+                                        value=1-precision(get(paste0('call.by.',j)), lfcm2)))
+      assign(paste0('fdr.bh.',j), `[<-`(get(paste0('fdr.bh.',j)), i, 
+                                        value=1-precision(get(paste0('call.bh.',j)), lfcm2)))
+      assign(paste0('tpr.raw.',j), `[<-`(get(paste0('tpr.raw.',j)), i, 
+                                         value=sensitivity(get(paste0('call.raw.',j)), lfcm2)))
+      assign(paste0('tpr.q.',j), `[<-`(get(paste0('tpr.q.',j)), i, 
+                                         value=sensitivity(get(paste0('call.q.',j)), lfcm2)))
+      assign(paste0('tpr.by.',j), `[<-`(get(paste0('tpr.by.',j)), i, 
+                                        value=sensitivity(get(paste0('call.by.',j)), lfcm2)))
+      assign(paste0('tpr.bh.',j), `[<-`(get(paste0('tpr.bh.',j)), i, 
+                                        value=sensitivity(get(paste0('call.bh.',j)), lfcm2)))
+    }
+    else {
+      assign(paste0('pred.',j), prediction(1-get(paste0('p.',j), res), DE))
+      assign(paste0('fpr.raw.',j), `[<-`(get(paste0('fpr.raw.',j)), i, 
+                                         value=1-specificity(get(paste0('call.raw.',j)), DE)))
+      assign(paste0('fpr.q.',j), `[<-`(get(paste0('fpr.q.',j)), i, 
+                                         value=1-specificity(get(paste0('call.q.',j)), DE)))
+      assign(paste0('fpr.by.',j), `[<-`(get(paste0('fpr.by.',j)), i, 
+                                        value=1-specificity(get(paste0('call.by.',j)), DE)))
+      assign(paste0('fpr.bh.',j), `[<-`(get(paste0('fpr.bh.',j)), i, 
+                                        value=1-specificity(get(paste0('call.bh.',j)), DE)))
+      assign(paste0('fdr.raw.',j), `[<-`(get(paste0('fdr.raw.',j)), i, 
+                                         value=1-precision(get(paste0('call.raw.',j)), DE)))
+      assign(paste0('fdr.q.',j), `[<-`(get(paste0('fdr.q.',j)), i, 
+                                         value=1-precision(get(paste0('call.q.',j)), DE)))
+      assign(paste0('fdr.by.',j), `[<-`(get(paste0('fdr.by.',j)), i, 
+                                        value=1-precision(get(paste0('call.by.',j)), DE)))
+      assign(paste0('fdr.bh.',j), `[<-`(get(paste0('fdr.bh.',j)), i, 
+                                        value=1-precision(get(paste0('call.bh.',j)), DE)))
+      assign(paste0('tpr.raw.',j), `[<-`(get(paste0('tpr.raw.',j)), i, 
+                                         value=sensitivity(get(paste0('call.raw.',j)), DE)))
+      assign(paste0('tpr.q.',j), `[<-`(get(paste0('tpr.q.',j)), i, 
+                                         value=sensitivity(get(paste0('call.q.',j)), DE)))
+      assign(paste0('tpr.by.',j), `[<-`(get(paste0('tpr.by.',j)), i, 
+                                        value=sensitivity(get(paste0('call.by.',j)), DE)))
+      assign(paste0('tpr.bh.',j), `[<-`(get(paste0('tpr.bh.',j)), i, 
+                                        value=sensitivity(get(paste0('call.bh.',j)), DE)))
+    }
+    assign(paste0('auc.',j), `[<-`(get(paste0('auc.',j)), i, 
+                                   value=performance(get(paste0('pred.',j)), measure='auc')@y.values[[1]]))
+    assign(paste0('false.discoveries.',j), `[<-`(get(paste0('false.discoveries.',j)), i,, 
+                                                 value=c(get(paste0('pred.',j))@fp[[1]], 
+                                                         rep(NA, 20000-length(get(paste0('pred.',j))@fp[[1]])))))
+    assign(paste0('discoveries.',j), `[<-`(get(paste0('discoveries.',j)), i,, 
+                                           value=c(get(paste0('pred.',j))@n.pos.pred[[1]], 
+                                                   rep(NA, 20000-length(get(paste0('pred.',j))@n.pos.pred[[1]])))))
+  }
+  for (j in c(names.expHM[1],names.lnHM[1])) {
+    assign(paste0('call.5.',j), factor(as.numeric(get(paste0('prob.',j), res) > 0.5), levels=c('1','0')))
+    assign(paste0('call.thr.',j), factor(as.numeric(get(paste0('prob.',j), res) > get(paste0('thr.',j))), levels=c('1','0')))
+    assign(paste0('pred.',j), prediction(get(paste0('prob.',j), res), DEDD))
+    assign(paste0('fpr.5.',j), `[<-`(get(paste0('fpr.5.',j)), i, 
+                                     value=1-specificity(get(paste0('call.5.',j)), DEDD)))
+    assign(paste0('fpr.thr.',j), `[<-`(get(paste0('fpr.thr.',j)), i, 
+                                       value=1-specificity(get(paste0('call.thr.',j)), DEDD)))
+    assign(paste0('fdr.5.',j), `[<-`(get(paste0('fdr.5.',j)), i, 
+                                     value=1-precision(get(paste0('call.5.',j)), DEDD)))
+    assign(paste0('fdr.thr.',j), `[<-`(get(paste0('fdr.thr.',j)), i, 
+                                       value=1-precision(get(paste0('call.thr.',j)), DEDD)))
+    assign(paste0('tpr.5.',j), `[<-`(get(paste0('tpr.5.',j)), i, 
+                                     value=sensitivity(get(paste0('call.5.',j)), DEDD)))
+    assign(paste0('tpr.thr.',j), `[<-`(get(paste0('tpr.thr.',j)), i, 
+                                       value=sensitivity(get(paste0('call.thr.',j)), DEDD)))
+    assign(paste0('auc.',j), `[<-`(get(paste0('auc.',j)), i, 
+                                   value=performance(get(paste0('pred.',j)), measure='auc')@y.values[[1]]))
+    assign(paste0('false.discoveries.',j), `[<-`(get(paste0('false.discoveries.',j)), i,, 
+                                                 value=c(get(paste0('pred.',j))@fp[[1]], 
+                                                         rep(NA, 20000-length(get(paste0('pred.',j))@fp[[1]])))))
+    assign(paste0('discoveries.',j), `[<-`(get(paste0('discoveries.',j)), i,, 
+                                           value=c(get(paste0('pred.',j))@n.pos.pred[[1]], 
+                                                   rep(NA, 20000-length(get(paste0('pred.',j))@n.pos.pred[[1]])))))
   }
 }
-#mean.discoveries.ql.edgeR <- colMeans(discoveries.ql.edgeR)
-mean.discoveries.ql.lfc1.edgeR <- colMeans(discoveries.ql.lfc1.edgeR)
-mean.discoveries.ql.lfc2.edgeR <- colMeans(discoveries.ql.lfc2.edgeR)
-mean.discoveries.lr.edgeR <- colMeans(discoveries.lr.edgeR)
-mean.discoveries.lr.lfc1.edgeR <- colMeans(discoveries.lr.lfc1.edgeR)
-mean.discoveries.lr.lfc2.edgeR <- colMeans(discoveries.lr.lfc2.edgeR)
-mean.discoveries.et.edgeR <- colMeans(discoveries.et.edgeR)
-#mean.fdr.ql.edgeR <- colMeans(false.discoveries.ql.edgeR) / colMeans(discoveries.ql.edgeR)
-mean.fdr.ql.lfc1.edgeR <- colMeans(false.discoveries.ql.lfc1.edgeR) / colMeans(discoveries.ql.lfc1.edgeR)
-mean.fdr.ql.lfc2.edgeR <- colMeans(false.discoveries.ql.lfc2.edgeR) / colMeans(discoveries.ql.lfc2.edgeR)
-mean.fdr.lr.edgeR <- colMeans(false.discoveries.lr.edgeR) / colMeans(discoveries.lr.edgeR)
-mean.fdr.lr.lfc1.edgeR <- colMeans(false.discoveries.lr.lfc1.edgeR) / colMeans(discoveries.lr.lfc1.edgeR)
-mean.fdr.lr.lfc2.edgeR <- colMeans(false.discoveries.lr.lfc2.edgeR) / colMeans(discoveries.lr.lfc2.edgeR)
-mean.fdr.et.edgeR <- colMeans(false.discoveries.et.edgeR) / colMeans(discoveries.et.edgeR)
+
+for (i in results.list) {
+  assign(paste0('mean.discoveries.',i), colMeans(get(paste0('discoveries.',i))))
+  assign(paste0('mean.fdr.',i), colMeans(get(paste0('false.discoveries.',i)) / get(paste0('discoveries.',i))))
+}
+
+rm(list=ls()[grep('^pred',ls())])
+rm(list=ls()[grep('^bh',ls())])
+rm(list=ls()[grep('^by',ls())])
+rm(list=ls()[grep('^q',ls())])
+rm(list=ls()[grep('^thr',ls())])
+rm(list=ls()[grep('^call',ls())])
+rm(list=ls()[grep('^discoveries',ls())])
+rm(list=ls()[grep('^false.discoveries',ls())])
+rm(list=c('i','j','import','res','DE','DD','DEDD','lfcd1','lfcd2','lfcm1','lfcm2'))
+
+names.DE <- c('ql.edgeR', 'lr.edgeR', 'et.edgeR', 'noif.DESeq', 'if.DESeq', 'voom', 'notrend.DSS', 'trend.DSS', 
+                'baySeq', 'mean.zi.MDSeq', 'mean.nozi.MDSeq', 'mean.expHM', 'lmean.expHM', 'mean.lnHM', 'lmean.lnHM', 
+                'mix.ShrinkBayes', 'np.ShrinkBayes')
+names.DE.lfc1 <- c('ql.lfc1.edgeR', 'lr.lfc1.edgeR', 'lfc1.DESeq', 'lfc1.voom', 'np.lfc1.ShrinkBayes', 
+                     'mean.zi.lfc1.MDSeq', 'mean.nozi.lfc1.MDSeq', 'mean.lfc1.expHM', 'mean.lfc1.lnHM')
+names.DE.lfc2 <- c('ql.lfc2.edgeR', 'lr.lfc2.edgeR', 'lfc2.DESeq', 'lfc2.voom', 'np.lfc2.ShrinkBayes', 
+                     'mean.zi.lfc2.MDSeq', 'mean.nozi.lfc2.MDSeq', 'mean.lfc2.expHM', 'mean.lfc2.lnHM')
+names.DD <- c('disp.zi.MDSeq', 'disp.nozi.MDSeq', 'disp.expHM', 'ldisp.expHM', 'disp.lnHM', 'ldisp.lnHM')
+names.DD.lfc1 <- c('disp.zi.lfc1.MDSeq', 'disp.nozi.lfc1.MDSeq', 'disp.lfc1.expHM', 'disp.lfc1.lnHM')
+names.DD.lfc2 <- c('disp.zi.lfc2.MDSeq', 'disp.nozi.lfc2.MDSeq', 'disp.lfc2.expHM', 'disp.lfc2.lnHM')
+names.DEDD <- c('expHM', 'lnHM')
+
+length(grep('^auc',ls())) # 51 vectors length 50
+length(grep('^fpr',ls())) # 140 vectors length 50
+length(grep('^fdr',ls())) # 140 vectors length 50
+length(grep('^tpr',ls())) # 140 vectors length 50
+length(grep('^mean.fdr',ls())) # 51 vectors length 20,000
+length(grep('^mean.discoveries',ls())) # 51 vectors length 20,000
+
+# 7 results files, each a list of 6 dataframes
+# DE.DEDD2
+# DE.lfc1.DEDD2
+# DE.lfc2.DEDD2
+# DD.DEDD2
+# DD.lfc1.DEDD2
+# DD.lfc2.DEDD2
+# DEDD.DEDD2
+
+for (i in c('DE', 'DE.lfc1', 'DE.lfc2', 'DD', 'DD.lfc1', 'DD.lfc2', 'DEDD')) {
+    assign(paste0('results.',i), list())
+  for (j in c('auc', 'fpr', 'fdr', 'tpr')) {
+    assign(paste0('results.',i), `[[<-`(get(paste0('results.',i)), j, data.frame(matrix(nrow=50, ncol=0))))
+  }
+  for (j in c('mean.fdr', 'mean.discoveries')) {
+    assign(paste0('results.',i), `[[<-`(get(paste0('results.',i)), j, data.frame(matrix(nrow=20000, ncol=0))))
+  }
+}
+
+names.fpr.fdr.tpr <- vector()
+for (i in c(names.edgeR, names.DESeq2, names.voom, names.DSS, names.MDSeq)) {
+  for (j in c('raw.','fdr.')) {
+    names.fpr.fdr.tpr <- c(names.fpr.fdr.tpr,paste0(j,i))
+  }
+}
+for (i in names.DSS) {
+  for (j in c('lfdr.','bh.')) {
+    names.fpr.fdr.tpr <- c(names.fpr.fdr.tpr,paste0(j,i))
+  }
+}
+for (i in names.baySeq) {
+  for (j in c('5.','fdr.')) {
+    names.fpr.fdr.tpr <- c(names.fpr.fdr.tpr,paste0(j,i))
+  }
+}
+for (i in names.ShrinkBayes) { 
+  for (j in c('lfdr.','bfdr.')) {
+    names.fpr.fdr.tpr <- c(names.fpr.fdr.tpr,paste0(j,i))
+  } # Only for DEDD2
+}
+for (i in c(names.expHM[1],names.lnHM[1])) {
+  for (j in c('5.','thr.','bfdr.')) {
+    names.fpr.fdr.tpr <- c(names.fpr.fdr.tpr,paste0(j,i))
+  }
+}
+for (i in c(names.expHM[-1],names.lnHM[-1])) {
+  for (j in c('raw.','bh.', 'by.','q.')) {
+    names.fpr.fdr.tpr <- c(names.fpr.fdr.tpr,paste0(j,i))
+  }
+}
+
+for (i in names.DE) {
+  results.DE$auc[[i]] <- get(paste0('auc.',i))
+  results.DE$mean.fdr[[i]] <- get(paste0('mean.fdr.',i))
+  results.DE$mean.discoveries[[i]] <- get(paste0('mean.discoveries.',i))
+  for (j in grep(i, names.fpr.fdr.tpr, value=T)) {
+    results.DE$fpr[[j]] <- get(paste0('fpr.',j))
+    results.DE$fdr[[j]] <- get(paste0('fdr.',j))
+    results.DE$tpr[[j]] <- get(paste0('tpr.',j))
+  }
+}
+for (i in names.DE.lfc1) {
+  results.DE.lfc1$auc[[i]] <- get(paste0('auc.',i))
+  results.DE.lfc1$mean.fdr[[i]] <- get(paste0('mean.fdr.',i))
+  results.DE.lfc1$mean.discoveries[[i]] <- get(paste0('mean.discoveries.',i))
+  for (j in grep(i, names.fpr.fdr.tpr, value=T)) {
+    results.DE.lfc1$fpr[[j]] <- get(paste0('fpr.',j))
+    results.DE.lfc1$fdr[[j]] <- get(paste0('fdr.',j))
+    results.DE.lfc1$tpr[[j]] <- get(paste0('tpr.',j))
+  }
+}
+for (i in names.DE.lfc2) {
+  results.DE.lfc2$auc[[i]] <- get(paste0('auc.',i))
+  results.DE.lfc2$mean.fdr[[i]] <- get(paste0('mean.fdr.',i))
+  results.DE.lfc2$mean.discoveries[[i]] <- get(paste0('mean.discoveries.',i))
+  for (j in grep(i, names.fpr.fdr.tpr, value=T)) {
+    results.DE.lfc2$fpr[[j]] <- get(paste0('fpr.',j))
+    results.DE.lfc2$fdr[[j]] <- get(paste0('fdr.',j))
+    results.DE.lfc2$tpr[[j]] <- get(paste0('tpr.',j))
+  }
+}
+for (i in names.DD) {
+  results.DD$auc[[i]] <- get(paste0('auc.',i))
+  results.DD$mean.fdr[[i]] <- get(paste0('mean.fdr.',i))
+  results.DD$mean.discoveries[[i]] <- get(paste0('mean.discoveries.',i))
+  for (j in grep(i, names.fpr.fdr.tpr, value=T)) {
+    results.DD$fpr[[j]] <- get(paste0('fpr.',j))
+    results.DD$fdr[[j]] <- get(paste0('fdr.',j))
+    results.DD$tpr[[j]] <- get(paste0('tpr.',j))
+  }
+}
+for (i in names.DD.lfc1) {
+  results.DD.lfc1$auc[[i]] <- get(paste0('auc.',i))
+  results.DD.lfc1$mean.fdr[[i]] <- get(paste0('mean.fdr.',i))
+  results.DD.lfc1$mean.discoveries[[i]] <- get(paste0('mean.discoveries.',i))
+  for (j in grep(i, names.fpr.fdr.tpr, value=T)) {
+    results.DD.lfc1$fpr[[j]] <- get(paste0('fpr.',j))
+    results.DD.lfc1$fdr[[j]] <- get(paste0('fdr.',j))
+    results.DD.lfc1$tpr[[j]] <- get(paste0('tpr.',j))
+  }
+}
+for (i in names.DD.lfc2) {
+  results.DD.lfc2$auc[[i]] <- get(paste0('auc.',i))
+  results.DD.lfc2$mean.fdr[[i]] <- get(paste0('mean.fdr.',i))
+  results.DD.lfc2$mean.discoveries[[i]] <- get(paste0('mean.discoveries.',i))
+  for (j in grep(i, names.fpr.fdr.tpr, value=T)) {
+    results.DD.lfc2$fpr[[j]] <- get(paste0('fpr.',j))
+    results.DD.lfc2$fdr[[j]] <- get(paste0('fdr.',j))
+    results.DD.lfc2$tpr[[j]] <- get(paste0('tpr.',j))
+  }
+}
+for (i in names.DEDD) {
+  results.DEDD$auc[[i]] <- get(paste0('auc.',i))
+  results.DEDD$mean.fdr[[i]] <- get(paste0('mean.fdr.',i))
+  results.DEDD$mean.discoveries[[i]] <- get(paste0('mean.discoveries.',i))
+  for (j in grep(i, names.fpr.fdr.tpr, value=T)) {
+    results.DEDD$fpr[[j]] <- get(paste0('fpr.',j))
+    results.DEDD$fdr[[j]] <- get(paste0('fdr.',j))
+    results.DEDD$tpr[[j]] <- get(paste0('tpr.',j))
+  }
+}
+
+
+
+
+
+
 
 par(mfrow=c(4,3))
-#plot(mean.discoveries.ql.edgeR, mean.fdr.ql.edgeR, type='l'); abline(h=0.05)
+plot(mean.discoveries.ql.edgeR, mean.fdr.ql.edgeR, type='l'); abline(h=0.05)
 plot(mean.discoveries.ql.lfc1.edgeR, mean.fdr.ql.lfc1.edgeR, type='l'); abline(h=0.05)
 plot(mean.discoveries.ql.lfc2.edgeR, mean.fdr.ql.lfc2.edgeR, type='l'); abline(h=0.05)
 plot(mean.discoveries.lr.edgeR, mean.fdr.lr.edgeR, type='l'); abline(h=0.05)

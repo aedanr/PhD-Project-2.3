@@ -43,6 +43,12 @@ for (i in 1:50) {
   p.disp.nozi.MDSeq <- res.nozi.MDSeq$Pvalue.dispersion
   p.disp.nozi.lfc1.MDSeq <- res.nozi.lfc1.MDSeq$Pvalue.dispersion
   p.disp.nozi.lfc2.MDSeq <- res.nozi.lfc2.MDSeq$Pvalue.dispersion
+  q.disp.zi.MDSeq <- res.zi.MDSeq$FDR.dispersion
+  q.disp.zi.lfc1.MDSeq <- res.zi.lfc1.MDSeq$FDR.dispersion
+  q.disp.zi.lfc2.MDSeq <- res.zi.lfc2.MDSeq$FDR.dispersion
+  q.disp.nozi.MDSeq <- res.nozi.MDSeq$FDR.dispersion
+  q.disp.nozi.lfc1.MDSeq <- res.nozi.lfc1.MDSeq$FDR.dispersion
+  q.disp.nozi.lfc2.MDSeq <- res.nozi.lfc2.MDSeq$FDR.dispersion
   rm(list=c('contrasts', 'fit.zi.MDSeq', 'fit.nozi.MDSeq', 'res.zi.MDSeq', 
             'res.zi.lfc1.MDSeq', 'res.zi.lfc2.MDSeq', 'res.nozi.MDSeq', 'res.nozi.lfc1.MDSeq', 
             'res.nozi.lfc2.MDSeq'))
@@ -93,6 +99,12 @@ for (i in 1:50) {
                   p.ldisp.expHM = p.ldisp.expHM, 
                   p.disp.lfc1.expHM = p.disp.lfc1.expHM, 
                   p.disp.lfc2.expHM = p.disp.lfc2.expHM, 
+                  q.disp.zi.MDSeq = q.disp.zi.MDSeq, 
+                  q.disp.zi.lfc1.MDSeq = q.disp.zi.lfc1.MDSeq, 
+                  q.disp.zi.lfc2.MDSeq = q.disp.zi.lfc2.MDSeq, 
+                  q.disp.nozi.MDSeq = q.disp.nozi.MDSeq, 
+                  q.disp.nozi.lfc1.MDSeq = q.disp.nozi.lfc1.MDSeq, 
+                  q.disp.nozi.lfc2.MDSeq = q.disp.nozi.lfc2.MDSeq, 
                   prob.lnHM = prob.lnHM, 
                   prop.lnHM = post.prop.lnHM, 
                   p.disp.lnHM = p.disp.lnHM, 

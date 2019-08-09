@@ -1,17 +1,17 @@
 library(here)
-library(coda)
-library(HDInterval)
+#library(coda)
+#library(HDInterval)
 library(compcodeR)
-library(limma)
+#library(limma)
 library(edgeR)
-library(DESeq2)
-library(DSS)
+#library(DESeq2)
+#library(DSS)
 library(baySeq)
 library(MDSeq)
-source(here('scripts','2019-04-03_exponential_hmm_adaptive_proposals_three_chains_function.R'))
-source(here('scripts','2019-03-27_lognormal_hmm_adaptive_proposals_three_chains_function.R'))
-source(here('scripts','2019-06-26_hpd_tail_prob_function.R'))
-source(here('scripts','2019-05-17_compData_diff_disp_functions.R'))
+#source(here('scripts','2019-04-03_exponential_hmm_adaptive_proposals_three_chains_function.R'))
+#source(here('scripts','2019-03-27_lognormal_hmm_adaptive_proposals_three_chains_function.R'))
+#source(here('scripts','2019-06-26_hpd_tail_prob_function.R'))
+#source(here('scripts','2019-05-17_compData_diff_disp_functions.R'))
 
 samples.per.cond <- 2
 group <- factor(c(rep(1,samples.per.cond), rep(2,samples.per.cond)))
@@ -66,54 +66,54 @@ for (i in 1:50) {
             'lrtest.edgeR', 'lr.lfc1.edgeR', 'lr.lfc2.edgeR', 'et.edgeR'))
   
   ## DESeq2
-  dat.DESeq <- DESeqDataSetFromMatrix(countData=counts@count.matrix, colData=data.frame(group), 
-                                      design=~group)
-  dat.DESeq <- estimateSizeFactors(dat.DESeq)
-  dat.DESeq$sizeFactor <- nf
-  dat.DESeq <- DESeq(dat.DESeq, minReplicatesForReplace=Inf)
-  res.noif.DESeq <- results(dat.DESeq, independentFiltering=F, cooksCutoff=F)
-  res.if.DESeq <- results(dat.DESeq, cooksCutoff=F, alpha=0.05)
-  res.lfc1.DESeq <- results(dat.DESeq, lfcThreshold=1, independentFiltering=F, cooksCutoff=F)
-  res.lfc2.DESeq <- results(dat.DESeq, lfcThreshold=2, independentFiltering=F, cooksCutoff=F)
-  p.noif.DESeq <- res.noif.DESeq$pvalue
-  p.if.DESeq <- res.noif.DESeq$pvalue
-  p.lfc1.DESeq <- res.lfc1.DESeq$pvalue
-  p.lfc2.DESeq <- res.lfc2.DESeq$pvalue
-  q.noif.DESeq <- res.noif.DESeq$padj
-  q.if.DESeq <- res.noif.DESeq$padj
-  q.lfc1.DESeq <- res.lfc1.DESeq$padj
-  q.lfc2.DESeq <- res.lfc2.DESeq$padj
-  rm(list=c('dat.DESeq', 'res.noif.DESeq', 'res.if.DESeq', 'res.lfc1.DESeq', 
-            'res.lfc2.DESeq'))
+#  dat.DESeq <- DESeqDataSetFromMatrix(countData=counts@count.matrix, colData=data.frame(group), 
+#                                      design=~group)
+#  dat.DESeq <- estimateSizeFactors(dat.DESeq)
+#  dat.DESeq$sizeFactor <- nf
+#  dat.DESeq <- DESeq(dat.DESeq, minReplicatesForReplace=Inf)
+#  res.noif.DESeq <- results(dat.DESeq, independentFiltering=F, cooksCutoff=F)
+#  res.if.DESeq <- results(dat.DESeq, cooksCutoff=F, alpha=0.05)
+#  res.lfc1.DESeq <- results(dat.DESeq, lfcThreshold=1, independentFiltering=F, cooksCutoff=F)
+#  res.lfc2.DESeq <- results(dat.DESeq, lfcThreshold=2, independentFiltering=F, cooksCutoff=F)
+#  p.noif.DESeq <- res.noif.DESeq$pvalue
+#  p.if.DESeq <- res.noif.DESeq$pvalue
+#  p.lfc1.DESeq <- res.lfc1.DESeq$pvalue
+#  p.lfc2.DESeq <- res.lfc2.DESeq$pvalue
+#  q.noif.DESeq <- res.noif.DESeq$padj
+#  q.if.DESeq <- res.noif.DESeq$padj
+#  q.lfc1.DESeq <- res.lfc1.DESeq$padj
+#  q.lfc2.DESeq <- res.lfc2.DESeq$padj
+#  rm(list=c('dat.DESeq', 'res.noif.DESeq', 'res.if.DESeq', 'res.lfc1.DESeq', 
+#            'res.lfc2.DESeq'))
   
   ## limma-voom
-  dat.voom <- voom(dge)
-  fit.voom <- lmFit(dat.voom, design)
-  res.voom <- eBayes(fit.voom)
-  lfc1.voom <- treat(fit.voom, lfc=1)
-  lfc2.voom <- treat(fit.voom, lfc=2)
-  p.voom <- topTable(res.voom, number=Inf, sort.by='none')$P.Value
-  p.lfc1.voom <- topTreat(lfc1.voom, number=Inf, sort.by='none', coef=2)$P.Value
-  p.lfc2.voom <- topTreat(lfc2.voom, number=Inf, sort.by='none', coef=2)$P.Value
-  q.voom <- topTable(res.voom, number=Inf, sort.by='none')$adj.P.Val
-  q.lfc1.voom <- topTreat(lfc1.voom, number=Inf, sort.by='none', coef=2)$adj.P.Val
-  q.lfc2.voom <- topTreat(lfc2.voom, number=Inf, sort.by='none', coef=2)$adj.P.Val
-  rm(list=c('dat.voom', 'fit.voom', 'res.voom', 'lfc1.voom', 'lfc2.voom'))
+#  dat.voom <- voom(dge)
+#  fit.voom <- lmFit(dat.voom, design)
+#  res.voom <- eBayes(fit.voom)
+#  lfc1.voom <- treat(fit.voom, lfc=1)
+#  lfc2.voom <- treat(fit.voom, lfc=2)
+#  p.voom <- topTable(res.voom, number=Inf, sort.by='none')$P.Value
+#  p.lfc1.voom <- topTreat(lfc1.voom, number=Inf, sort.by='none', coef=2)$P.Value
+#  p.lfc2.voom <- topTreat(lfc2.voom, number=Inf, sort.by='none', coef=2)$P.Value
+#  q.voom <- topTable(res.voom, number=Inf, sort.by='none')$adj.P.Val
+#  q.lfc1.voom <- topTreat(lfc1.voom, number=Inf, sort.by='none', coef=2)$adj.P.Val
+#  q.lfc2.voom <- topTreat(lfc2.voom, number=Inf, sort.by='none', coef=2)$adj.P.Val
+#  rm(list=c('dat.voom', 'fit.voom', 'res.voom', 'lfc1.voom', 'lfc2.voom'))
   
   ## DSS
-  dat.DSS <- newSeqCountSet(counts=matrix(counts@count.matrix, ncol=length(group)), 
-                            designs=as.numeric(group), normalizationFactor=nf)
-  notrend.DSS <- estDispersion(dat.DSS)
-  trend.DSS <- estDispersion(dat.DSS, trend=T)
-  res.notrend.DSS <- waldTest(notrend.DSS, 1, 2)[order(waldTest(notrend.DSS, 1, 2)$geneIndex),]
-  res.trend.DSS <- waldTest(trend.DSS, 1, 2)[order(waldTest(trend.DSS, 1, 2)$geneIndex),]
-  p.notrend.DSS <- res.notrend.DSS$pval
-  q.notrend.DSS <- res.notrend.DSS$fdr
-  lfdr.notrend.DSS <- res.notrend.DSS$local.fdr
-  p.trend.DSS <- res.trend.DSS$pval
-  q.trend.DSS <- res.trend.DSS$fdr
-  lfdr.trend.DSS <- res.trend.DSS$local.fdr
-  rm(list=c('dat.DSS', 'notrend.DSS', 'trend.DSS', 'res.notrend.DSS', 'res.trend.DSS'))
+#  dat.DSS <- newSeqCountSet(counts=matrix(counts@count.matrix, ncol=length(group)), 
+#                            designs=as.numeric(group), normalizationFactor=nf)
+#  notrend.DSS <- estDispersion(dat.DSS)
+#  trend.DSS <- estDispersion(dat.DSS, trend=T)
+#  res.notrend.DSS <- waldTest(notrend.DSS, 1, 2)[order(waldTest(notrend.DSS, 1, 2)$geneIndex),]
+#  res.trend.DSS <- waldTest(trend.DSS, 1, 2)[order(waldTest(trend.DSS, 1, 2)$geneIndex),]
+#  p.notrend.DSS <- res.notrend.DSS$pval
+#  q.notrend.DSS <- res.notrend.DSS$fdr
+#  lfdr.notrend.DSS <- res.notrend.DSS$local.fdr
+#  p.trend.DSS <- res.trend.DSS$pval
+#  q.trend.DSS <- res.trend.DSS$fdr
+#  lfdr.trend.DSS <- res.trend.DSS$local.fdr
+#  rm(list=c('dat.DSS', 'notrend.DSS', 'trend.DSS', 'res.notrend.DSS', 'res.trend.DSS'))
   
   ## baySeq
   dat.baySeq <- new('countData', data=counts@count.matrix, replicates=group, 
@@ -199,42 +199,42 @@ for (i in 1:50) {
             'res.nozi.lfc2.MDSeq'))
   
   ## expHM
-  expHM <- exp_hmm_adapt_3_chains(counts=t(norm), groups=group)
-  prob.expHM <- colMeans(as.matrix(expHM$indicators))
-  post.prop.expHM <- mean(as.matrix(expHM$proportion))
-  mean.diff.expHM <- as.matrix(expHM$means1) - as.matrix(expHM$means2)
-  log.mean.diff.expHM <- log(as.matrix(expHM$means1)) - log(as.matrix(expHM$means2))
-  disp.diff.expHM <- as.matrix(expHM$disps1) - as.matrix(expHM$disps2)
-  log.disp.diff.expHM <- log(as.matrix(expHM$disps1)) - log(as.matrix(expHM$disps2))
-  p.mean.expHM <- apply(mean.diff.expHM,2,hpd.pval, m=0)
-  p.lmean.expHM <- apply(log.mean.diff.expHM,2,hpd.pval, m=0)
-  p.mean.lfc1.expHM <- apply(log.mean.diff.expHM,2,hpd.pval, m=1)
-  p.mean.lfc2.expHM <- apply(log.mean.diff.expHM,2,hpd.pval, m=2)
-  p.disp.expHM <- apply(disp.diff.expHM,2,hpd.pval, m=0)
-  p.ldisp.expHM <- apply(log.disp.diff.expHM,2,hpd.pval, m=0)
-  p.disp.lfc1.expHM <- apply(log.disp.diff.expHM,2,hpd.pval, m=1)
-  p.disp.lfc2.expHM <- apply(log.disp.diff.expHM,2,hpd.pval, m=2)
-  rm(list=c('expHM', 'mean.diff.expHM', 'log.mean.diff.expHM', 
-            'disp.diff.expHM', 'log.disp.diff.expHM'))
+#  expHM <- exp_hmm_adapt_3_chains(counts=t(norm), groups=group)
+#  prob.expHM <- colMeans(as.matrix(expHM$indicators))
+#  post.prop.expHM <- mean(as.matrix(expHM$proportion))
+#  mean.diff.expHM <- as.matrix(expHM$means1) - as.matrix(expHM$means2)
+#  log.mean.diff.expHM <- log(as.matrix(expHM$means1)) - log(as.matrix(expHM$means2))
+#  disp.diff.expHM <- as.matrix(expHM$disps1) - as.matrix(expHM$disps2)
+#  log.disp.diff.expHM <- log(as.matrix(expHM$disps1)) - log(as.matrix(expHM$disps2))
+#  p.mean.expHM <- apply(mean.diff.expHM,2,hpd.pval, m=0)
+#  p.lmean.expHM <- apply(log.mean.diff.expHM,2,hpd.pval, m=0)
+#  p.mean.lfc1.expHM <- apply(log.mean.diff.expHM,2,hpd.pval, m=1)
+#  p.mean.lfc2.expHM <- apply(log.mean.diff.expHM,2,hpd.pval, m=2)
+#  p.disp.expHM <- apply(disp.diff.expHM,2,hpd.pval, m=0)
+#  p.ldisp.expHM <- apply(log.disp.diff.expHM,2,hpd.pval, m=0)
+#  p.disp.lfc1.expHM <- apply(log.disp.diff.expHM,2,hpd.pval, m=1)
+#  p.disp.lfc2.expHM <- apply(log.disp.diff.expHM,2,hpd.pval, m=2)
+#  rm(list=c('expHM', 'mean.diff.expHM', 'log.mean.diff.expHM', 
+#            'disp.diff.expHM', 'log.disp.diff.expHM'))
 
   ## lnHM
-  lnHM <- ln_hmm_adapt_3_chains(counts=t(norm), groups=group)
-  prob.lnHM <- colMeans(as.matrix(lnHM$indicators))
-  post.prop.lnHM <- mean(as.matrix(lnHM$proportion))
-  mean.diff.lnHM <- as.matrix(lnHM$means1) - as.matrix(lnHM$means2)
-  log.mean.diff.lnHM <- log(as.matrix(lnHM$means1)) - log(as.matrix(lnHM$means2))
-  disp.diff.lnHM <- as.matrix(lnHM$disps1) - as.matrix(lnHM$disps2)
-  log.disp.diff.lnHM <- log(as.matrix(lnHM$disps1)) - log(as.matrix(lnHM$disps2))
-  p.mean.lnHM <- apply(mean.diff.lnHM,2,hpd.pval)
-  p.lmean.lnHM <- apply(log.mean.diff.lnHM,2,hpd.pval)
-  p.mean.lfc1.lnHM <- apply(log.mean.diff.lnHM,2,hpd.pval, m=1)
-  p.mean.lfc2.lnHM <- apply(log.mean.diff.lnHM,2,hpd.pval, m=2)
-  p.disp.lnHM <- apply(disp.diff.lnHM,2,hpd.pval)
-  p.ldisp.lnHM <- apply(log.disp.diff.lnHM,2,hpd.pval)
-  p.disp.lfc1.lnHM <- apply(log.disp.diff.lnHM,2,hpd.pval, m=1)
-  p.disp.lfc2.lnHM <- apply(log.disp.diff.lnHM,2,hpd.pval, m=2)
-  rm(list=c('lnHM', 'mean.diff.lnHM', 'log.mean.diff.lnHM', 
-            'disp.diff.lnHM', 'log.disp.diff.lnHM'))
+#  lnHM <- ln_hmm_adapt_3_chains(counts=t(norm), groups=group)
+#  prob.lnHM <- colMeans(as.matrix(lnHM$indicators))
+#  post.prop.lnHM <- mean(as.matrix(lnHM$proportion))
+#  mean.diff.lnHM <- as.matrix(lnHM$means1) - as.matrix(lnHM$means2)
+#  log.mean.diff.lnHM <- log(as.matrix(lnHM$means1)) - log(as.matrix(lnHM$means2))
+#  disp.diff.lnHM <- as.matrix(lnHM$disps1) - as.matrix(lnHM$disps2)
+#  log.disp.diff.lnHM <- log(as.matrix(lnHM$disps1)) - log(as.matrix(lnHM$disps2))
+#  p.mean.lnHM <- apply(mean.diff.lnHM,2,hpd.pval)
+#  p.lmean.lnHM <- apply(log.mean.diff.lnHM,2,hpd.pval)
+#  p.mean.lfc1.lnHM <- apply(log.mean.diff.lnHM,2,hpd.pval, m=1)
+#  p.mean.lfc2.lnHM <- apply(log.mean.diff.lnHM,2,hpd.pval, m=2)
+#  p.disp.lnHM <- apply(disp.diff.lnHM,2,hpd.pval)
+#  p.ldisp.lnHM <- apply(log.disp.diff.lnHM,2,hpd.pval)
+#  p.disp.lfc1.lnHM <- apply(log.disp.diff.lnHM,2,hpd.pval, m=1)
+#  p.disp.lfc2.lnHM <- apply(log.disp.diff.lnHM,2,hpd.pval, m=2)
+#  rm(list=c('lnHM', 'mean.diff.lnHM', 'log.mean.diff.lnHM', 
+#            'disp.diff.lnHM', 'log.disp.diff.lnHM'))
   
   results <- list(data = counts, 
                   DE = DE, 
@@ -257,26 +257,26 @@ for (i in 1:50) {
                   q.lr.lfc1.edgeR = q.lr.lfc1.edgeR, 
                   q.lr.lfc2.edgeR = q.lr.lfc2.edgeR, 
                   q.et.edgeR = q.et.edgeR, 
-                  p.noif.DESeq = p.noif.DESeq, 
-                  p.if.DESeq = p.if.DESeq, 
-                  p.lfc1.DESeq = p.lfc1.DESeq, 
-                  p.lfc2.DESeq = p.lfc2.DESeq, 
-                  q.noif.DESeq = q.noif.DESeq, 
-                  q.if.DESeq = q.if.DESeq, 
-                  q.lfc1.DESeq = q.lfc1.DESeq, 
-                  q.lfc2.DESeq = q.lfc2.DESeq, 
-                  p.voom = p.voom, 
-                  p.lfc1.voom = p.lfc1.voom, 
-                  p.lfc2.voom = p.lfc2.voom, 
-                  q.voom = q.voom, 
-                  q.lfc1.voom = q.lfc1.voom, 
-                  q.lfc2.voom = q.lfc2.voom, 
-                  p.notrend.DSS = p.notrend.DSS, 
-                  q.notrend.DSS = q.notrend.DSS, 
-                  lfdr.notrend.DSS = lfdr.notrend.DSS, 
-                  p.trend.DSS = p.trend.DSS, 
-                  q.trend.DSS = q.trend.DSS, 
-                  lfdr.trend.DSS = lfdr.trend.DSS, 
+                  #p.noif.DESeq = p.noif.DESeq, 
+                  #p.if.DESeq = p.if.DESeq, 
+                  #p.lfc1.DESeq = p.lfc1.DESeq, 
+                  #p.lfc2.DESeq = p.lfc2.DESeq, 
+                  #q.noif.DESeq = q.noif.DESeq, 
+                  #q.if.DESeq = q.if.DESeq, 
+                  #q.lfc1.DESeq = q.lfc1.DESeq, 
+                  #q.lfc2.DESeq = q.lfc2.DESeq, 
+                  #p.voom = p.voom, 
+                  #p.lfc1.voom = p.lfc1.voom, 
+                  #p.lfc2.voom = p.lfc2.voom, 
+                  #q.voom = q.voom, 
+                  #q.lfc1.voom = q.lfc1.voom, 
+                  #q.lfc2.voom = q.lfc2.voom, 
+                  #p.notrend.DSS = p.notrend.DSS, 
+                  #q.notrend.DSS = q.notrend.DSS, 
+                  #lfdr.notrend.DSS = lfdr.notrend.DSS, 
+                  #p.trend.DSS = p.trend.DSS, 
+                  #q.trend.DSS = q.trend.DSS, 
+                  #lfdr.trend.DSS = lfdr.trend.DSS, 
                   prob.baySeq = prob.baySeq, 
                   q.baySeq = q.baySeq, 
                   #lfdr.mix.ShrinkBayes = lfdr.mix.ShrinkBayes, 
@@ -310,36 +310,36 @@ for (i in 1:50) {
                   q.disp.zi.lfc2.MDSeq = q.disp.zi.lfc2.MDSeq, 
                   q.disp.nozi.MDSeq = q.disp.nozi.MDSeq, 
                   q.disp.nozi.lfc1.MDSeq = q.disp.nozi.lfc1.MDSeq, 
-                  q.disp.nozi.lfc2.MDSeq = q.disp.nozi.lfc2.MDSeq, 
-                  prob.expHM = prob.expHM, 
-                  prop.expHM = post.prop.expHM, 
-                  p.mean.expHM = p.mean.expHM, 
-                  p.lmean.expHM = p.lmean.expHM, 
-                  p.mean.lfc1.expHM = p.mean.lfc1.expHM, 
-                  p.mean.lfc2.expHM = p.mean.lfc2.expHM, 
-                  p.disp.expHM = p.disp.expHM, 
-                  p.ldisp.expHM = p.ldisp.expHM, 
-                  p.disp.lfc1.expHM = p.disp.lfc1.expHM, 
-                  p.disp.lfc2.expHM = p.disp.lfc2.expHM, 
-                  prob.lnHM = prob.lnHM, 
-                  prop.lnHM = post.prop.lnHM, 
-                  p.mean.lnHM = p.mean.lnHM, 
-                  p.lmean.lnHM = p.lmean.lnHM, 
-                  p.mean.lfc1.lnHM = p.mean.lfc1.lnHM, 
-                  p.mean.lfc2.lnHM = p.mean.lfc2.lnHM, 
-                  p.disp.lnHM = p.disp.lnHM, 
-                  p.ldisp.lnHM = p.ldisp.lnHM, 
-                  p.disp.lfc1.lnHM = p.disp.lfc1.lnHM, 
-                  p.disp.lfc2.lnHM = p.disp.lfc2.lnHM)
+                  q.disp.nozi.lfc2.MDSeq = q.disp.nozi.lfc2.MDSeq) 
+                  #prob.expHM = prob.expHM, 
+                  #prop.expHM = post.prop.expHM, 
+                  #p.mean.expHM = p.mean.expHM, 
+                  #p.lmean.expHM = p.lmean.expHM, 
+                  #p.mean.lfc1.expHM = p.mean.lfc1.expHM, 
+                  #p.mean.lfc2.expHM = p.mean.lfc2.expHM, 
+                  #p.disp.expHM = p.disp.expHM, 
+                  #p.ldisp.expHM = p.ldisp.expHM, 
+                  #p.disp.lfc1.expHM = p.disp.lfc1.expHM, 
+                  #p.disp.lfc2.expHM = p.disp.lfc2.expHM, 
+                  #prob.lnHM = prob.lnHM, 
+                  #prop.lnHM = post.prop.lnHM, 
+                  #p.mean.lnHM = p.mean.lnHM, 
+                  #p.lmean.lnHM = p.lmean.lnHM, 
+                  #p.mean.lfc1.lnHM = p.mean.lfc1.lnHM, 
+                  #p.mean.lfc2.lnHM = p.mean.lfc2.lnHM, 
+                  #p.disp.lnHM = p.disp.lnHM, 
+                  #p.ldisp.lnHM = p.ldisp.lnHM, 
+                  #p.disp.lfc1.lnHM = p.disp.lfc1.lnHM, 
+                  #p.disp.lfc2.lnHM = p.disp.lfc2.lnHM)
   
-  filename <- paste0('results.', filename, '.rds')
+  filename <- paste0('results.', filename, '.edgeR_baySeq_MDSeq.rds')
   saveRDS(results, file=here(filename))
 
   rm(list=c('counts', 'DE', 'DD', 'lfcm1', 'lfcm2', 'lfcd1', 'lfcd2', 
             'nf', 'norm', 'dge', 'filename', 'results'))
 }
 
-filename <- paste0('sessionInfo.DEDD', samples.per.cond, '.rds')
+filename <- paste0('sessionInfo.DEDD', samples.per.cond, '.edgeR_baySeq_MDSeq.rds')
 saveRDS(sessionInfo(), file=here(filename))
 
 
