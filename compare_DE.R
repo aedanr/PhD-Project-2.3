@@ -32,7 +32,11 @@ for (i in 1:50) {
   lfcm2 <- abs(counts@variable.annotations$truelog2foldchanges) > 2
 
   # Normalise and create DGEList object
-  nf <- calcNormFactors(counts@count.matrix)
+  # nf <- calcNormFactors(counts@count.matrix)
+  dat.DESeq <- DESeqDataSetFromMatrix(countData=counts@count.matrix, colData=data.frame(group), 
+                                      design=~group)
+  dat.DESeq <- estimateSizeFactors(dat.DESeq)
+  nf <- dat.DESeq$sizeFactor
   norm <- t(t(counts@count.matrix) / nf)
   dge <- DGEList(counts=counts@count.matrix, norm.factors=nf, group=group)
   
@@ -65,10 +69,6 @@ for (i in 1:50) {
             'lrtest.edgeR', 'lr.lfc1.edgeR', 'lr.lfc2.edgeR', 'et.edgeR'))
   
   ## DESeq2
-  dat.DESeq <- DESeqDataSetFromMatrix(countData=counts@count.matrix, colData=data.frame(group), 
-                                      design=~group)
-  dat.DESeq <- estimateSizeFactors(dat.DESeq)
-  dat.DESeq$sizeFactor <- nf
   dat.DESeq <- DESeq(dat.DESeq, minReplicatesForReplace=Inf)
   res.noif.DESeq <- results(dat.DESeq, independentFiltering=F, cooksCutoff=F)
   res.if.DESeq <- results(dat.DESeq, cooksCutoff=F, alpha=0.05)
@@ -103,16 +103,18 @@ for (i in 1:50) {
   dat.DSS <- newSeqCountSet(counts=matrix(counts@count.matrix, ncol=length(group)), 
                             designs=as.numeric(group), normalizationFactor=nf)
   notrend.DSS <- estDispersion(dat.DSS)
-  trend.DSS <- estDispersion(dat.DSS, trend=T)
+  # trend.DSS <- estDispersion(dat.DSS, trend=T)
   res.notrend.DSS <- waldTest(notrend.DSS, 1, 2)[order(waldTest(notrend.DSS, 1, 2)$geneIndex),]
   res.trend.DSS <- waldTest(trend.DSS, 1, 2)[order(waldTest(trend.DSS, 1, 2)$geneIndex),]
   p.notrend.DSS <- res.notrend.DSS$pval
   q.notrend.DSS <- res.notrend.DSS$fdr
   lfdr.notrend.DSS <- res.notrend.DSS$local.fdr
-  p.trend.DSS <- res.trend.DSS$pval
-  q.trend.DSS <- res.trend.DSS$fdr
-  lfdr.trend.DSS <- res.trend.DSS$local.fdr
-  rm(list=c('dat.DSS', 'notrend.DSS', 'trend.DSS', 'res.notrend.DSS', 'res.trend.DSS'))
+  # p.trend.DSS <- res.trend.DSS$pval
+  # q.trend.DSS <- res.trend.DSS$fdr
+  # lfdr.trend.DSS <- res.trend.DSS$local.fdr
+  rm(list=c('dat.DSS', 'notrend.DSS', 
+            # 'trend.DSS', 
+            'res.notrend.DSS'))#, 'res.trend.DSS'))
   
   ## baySeq
   dat.baySeq <- new('countData', data=counts@count.matrix, replicates=group, 
@@ -244,9 +246,9 @@ for (i in 1:50) {
                   p.notrend.DSS = p.notrend.DSS, 
                   q.notrend.DSS = q.notrend.DSS, 
                   lfdr.notrend.DSS = lfdr.notrend.DSS, 
-                  p.trend.DSS = p.trend.DSS, 
-                  q.trend.DSS = q.trend.DSS, 
-                  lfdr.trend.DSS = lfdr.trend.DSS, 
+                  # p.trend.DSS = p.trend.DSS, 
+                  # q.trend.DSS = q.trend.DSS, 
+                  # lfdr.trend.DSS = lfdr.trend.DSS, 
                   prob.baySeq = prob.baySeq, 
                   q.baySeq = q.baySeq, 
                   #lfdr.mix.ShrinkBayes = lfdr.mix.ShrinkBayes, 
@@ -282,11 +284,11 @@ for (i in 1:50) {
                   p.mean.lfc1.lnHM = p.mean.lfc1.lnHM, 
                   p.mean.lfc2.lnHM = p.mean.lfc2.lnHM)
   
-  filename <- paste0('results.', filename, '.rds')
+  filename <- paste0('results.', filename, '.DESeqnorm.rds')
   saveRDS(results, file=here(filename))
 
   rm(list=c('counts', 'DE', 'lfcm1', 'lfcm2', 'nf', 'norm', 'dge', 'filename', 'results'))
 }
 
-filename <- paste0('sessionInfo.DE', samples.per.cond, '.rds')
+filename <- paste0('sessionInfo.DE', samples.per.cond, '.DESeqnorm.rds')
 saveRDS(sessionInfo(), file=here(filename))
