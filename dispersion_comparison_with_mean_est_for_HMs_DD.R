@@ -47,11 +47,21 @@ for (i in 1:50) {
   ## expHM
   expHM <- exp_hmm_adapt_3_chains(counts=t(norm), groups=group)
   disps.expHM <- colMeans(as.matrix(expHM$disps0))
+  disps.expHM.1 <- colMeans(as.matrix(expHM$disps1))
+  disps.expHM.2 <- colMeans(as.matrix(expHM$disps2))
+  means.expHM <- colMeans(as.matrix(expHM$means0))
+  means.expHM.1 <- colMeans(as.matrix(expHM$means1))
+  means.expHM.2 <- colMeans(as.matrix(expHM$means2))
   
   # lnHM
   lnHM <- ln_hmm_adapt_3_chains(counts=t(norm), groups=group)
   disps.lnHM <- colMeans(as.matrix(lnHM$disps0))
-
+  disps.lnHM.1 <- colMeans(as.matrix(lnHM$disps1))
+  disps.lnHM.2 <- colMeans(as.matrix(lnHM$disps2))
+  means.lnHM <- colMeans(as.matrix(lnHM$means0))
+  means.lnHM.1 <- colMeans(as.matrix(lnHM$means1))
+  means.lnHM.2 <- colMeans(as.matrix(lnHM$means2))
+  
   results <- list(data = counts, 
                   DD = DD, 
                   disps.edgeR.trended = disps.edgeR.trended, 
