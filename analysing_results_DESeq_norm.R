@@ -252,8 +252,8 @@ round(colMeans(DEDD.results.DEDD10$tpr, na.rm=T),3)
 # DE2, 5, 10 ####
 for (i in c('DE', 'DE.lfc1', 'DE.lfc2', 'DEDD')) {
   for (j in c('DE2', 'DE5', 'DE10')) {
-    assign(paste0(i,'.results.',j), readRDS(here('Results/DE compcodeR data results July-Aug 2019', 
-                                                 paste0(i,'.results.',j,'.rds'))))
+    assign(paste0(i,'.results.',j), readRDS(here('Results/DE compcodeR data results DESeq2 norm Aug 2019', 
+                                                 paste0(i,'.results.',j,'.DESeqnorm.rds'))))
   }
 }
 rm('i','j')
@@ -261,26 +261,29 @@ rm('i','j')
 
 # DE ####
 par(mfrow=c(3,1), mar=c(3,3,1,1))
-boxplot(DE.results.DE2$auc, names=1:15)
-boxplot(DE.results.DE5$auc, names=1:15)
+boxplot(DE.results.DE2$auc, names=1:14)
+abline(h=c(0.78,0.8,0.82), col='grey')
+boxplot(DE.results.DE5$auc, names=1:14)
+abline(h=c(0.88,0.89,0.9,0.91), col='grey')
 boxplot(DE.results.DE10$auc, names=1:14)
+abline(h=c(0.94,0.95,0.96), col='grey')
 round(colMeans(DE.results.DE2$auc),3)
 round(colMeans(DE.results.DE5$auc),3)
 round(colMeans(DE.results.DE10$auc),3)
 
-par(mfrow=c(6,3), mar=c(2.5,3,1,1), mgp=c(1.8,0.7,0))
-for (i in 1:17) {
+par(mfrow=c(5,3), mar=c(2.5,3,1,1), mgp=c(1.8,0.7,0))
+for (i in 1:14) {
   plot(DE.results.DE2$mean.discoveries[which(DE.results.DE2$mean.discoveries[,i]<1000),i], 
        DE.results.DE2$mean.fdr[which(DE.results.DE2$mean.discoveries[,i]<1000),i], type='l', 
        xlab='', ylab=names(DE.results.DE2$mean.fdr)[i], ylim=c(0,0.8))
 }
-par(mfrow=c(6,3), mar=c(2.5,3,1,1), mgp=c(1.8,0.7,0))
+par(mfrow=c(5,3), mar=c(2.5,3,1,1), mgp=c(1.8,0.7,0))
 for (i in 1:14) {
   plot(DE.results.DE5$mean.discoveries[which(DE.results.DE5$mean.discoveries[,i]<1000),i], 
        DE.results.DE5$mean.fdr[which(DE.results.DE5$mean.discoveries[,i]<1000),i], type='l', 
        xlab='', ylab=names(DE.results.DE5$mean.fdr)[i], ylim=c(0,0.2))
 }
-par(mfrow=c(6,3), mar=c(2.5,3,1,1), mgp=c(1.8,0.7,0))
+par(mfrow=c(5,3), mar=c(2.5,3,1,1), mgp=c(1.8,0.7,0))
 for (i in 1:14) {
   plot(DE.results.DE10$mean.discoveries[which(DE.results.DE10$mean.discoveries[,i]<1000),i], 
        DE.results.DE10$mean.fdr[which(DE.results.DE10$mean.discoveries[,i]<1000),i], type='l', 
@@ -289,22 +292,24 @@ for (i in 1:14) {
 
 par(mfrow=c(3,1), mar=c(3,3,1,1))
 boxplot(DE.results.DE2$fdr[-grep('raw',names(DE.results.DE2$fdr))], 
-        names=1:28); abline(h=0.05)
+        names=1:25); abline(h=0.05, col='grey')
 boxplot(DE.results.DE5$fdr[-grep('raw',names(DE.results.DE5$fdr))], 
-        names=1:28); abline(h=0.05)
+        names=1:25); abline(h=0.05, col='grey')
 boxplot(DE.results.DE10$fdr[-grep('raw',names(DE.results.DE10$fdr))], 
-        names=1:25); abline(h=0.05)
+        names=1:25); abline(h=0.05, col='grey')
 round(colMeans(DE.results.DE2$fdr[-grep('raw',names(DE.results.DE2$fdr))], na.rm=T),3)
 round(colMeans(DE.results.DE5$fdr[-grep('raw',names(DE.results.DE5$fdr))], na.rm=T),3)
 round(colMeans(DE.results.DE10$fdr[-grep('raw',names(DE.results.DE10$fdr))], na.rm=T),3)
 
 par(mfrow=c(3,1), mar=c(3,3,1,1))
 boxplot(DE.results.DE2$tpr[-grep('raw',names(DE.results.DE2$tpr))], 
-        names=1:28)
+        names=1:25)
 boxplot(DE.results.DE5$tpr[-grep('raw',names(DE.results.DE5$tpr))], 
-        names=1:28)
+        names=1:25)
+abline(h=c(0.15,0.2,0.25,0.3,0.35,0.4,0.45), col='grey')
 boxplot(DE.results.DE10$tpr[-grep('raw',names(DE.results.DE10$tpr))], 
         names=1:25)
+abline(h=c(0.55,0.6,0.65), col='grey')
 round(colMeans(DE.results.DE2$tpr[-grep('raw',names(DE.results.DE2$tpr))], na.rm=T),3)
 round(colMeans(DE.results.DE5$tpr[-grep('raw',names(DE.results.DE5$tpr))], na.rm=T),3)
 round(colMeans(DE.results.DE10$tpr[-grep('raw',names(DE.results.DE10$tpr))], na.rm=T),3)
@@ -384,9 +389,9 @@ round(colMeans(DEDD.results.DE5$auc),3)
 round(colMeans(DEDD.results.DE10$auc),3)
 
 par(mfrow=c(3,1), mar=c(3,3,1,1))
-boxplot(DEDD.results.DE2$fdr); abline(h=0.05)
-boxplot(DEDD.results.DE5$fdr); abline(h=0.05)
-boxplot(DEDD.results.DE10$fdr); abline(h=0.05)
+boxplot(DEDD.results.DE2$fdr); abline(h=0.05, col='grey')
+boxplot(DEDD.results.DE5$fdr); abline(h=0.05, col='grey')
+boxplot(DEDD.results.DE10$fdr, ylim=c(0,0.05)); abline(h=0.05, col='grey')
 round(colMeans(DEDD.results.DE2$fdr, na.rm=T),3)
 round(colMeans(DEDD.results.DE5$fdr, na.rm=T),3)
 round(colMeans(DEDD.results.DE10$fdr, na.rm=T),3)
@@ -404,7 +409,7 @@ round(colMeans(DEDD.results.DE10$tpr),3)
 # DD2, 5, 10 ####
 for (i in c('DD', 'DD.lfc1', 'DD.lfc2', 'DEDD')) {
   for (j in c('DD2', 'DD5', 'DD10')) {
-    assign(paste0(i,'.results.',j), readRDS(here('Results/DD compcodeR data results July-Aug 2019', 
+    assign(paste0(i,'.results.',j), readRDS(here('Results/DD compcodeR data results July 2019', 
                                                  paste0(i,'.results.',j,'.rds'))))
   }
 }

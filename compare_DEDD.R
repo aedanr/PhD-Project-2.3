@@ -31,9 +31,13 @@ for (i in 1:50) {
   lfcm2 <- abs(counts@variable.annotations$truelog2foldchanges) > 2
   lfcd1 <- abs(counts@variable.annotations$truelog2fcdispersion) > 1
   lfcd2 <- abs(counts@variable.annotations$truelog2fcdispersion) > 2
-  
+
   # Normalise and create DGEList object
-  nf <- calcNormFactors(counts@count.matrix)
+  # nf <- calcNormFactors(counts@count.matrix)
+  dat.DESeq <- DESeqDataSetFromMatrix(countData=counts@count.matrix, colData=data.frame(group), 
+                                      design=~group)
+  dat.DESeq <- estimateSizeFactors(dat.DESeq)
+  nf <- dat.DESeq$sizeFactor
   norm <- t(t(counts@count.matrix) / nf)
   dge <- DGEList(counts=counts@count.matrix, norm.factors=nf, group=group)
   
@@ -66,10 +70,6 @@ for (i in 1:50) {
             'lrtest.edgeR', 'lr.lfc1.edgeR', 'lr.lfc2.edgeR', 'et.edgeR'))
   
   ## DESeq2
-  dat.DESeq <- DESeqDataSetFromMatrix(countData=counts@count.matrix, colData=data.frame(group), 
-                                      design=~group)
-  dat.DESeq <- estimateSizeFactors(dat.DESeq)
-  dat.DESeq$sizeFactor <- nf
   dat.DESeq <- DESeq(dat.DESeq, minReplicatesForReplace=Inf)
   res.noif.DESeq <- results(dat.DESeq, independentFiltering=F, cooksCutoff=F)
   res.if.DESeq <- results(dat.DESeq, cooksCutoff=F, alpha=0.05)
@@ -332,15 +332,14 @@ for (i in 1:50) {
                   p.disp.lfc1.lnHM = p.disp.lfc1.lnHM, 
                   p.disp.lfc2.lnHM = p.disp.lfc2.lnHM)
   
-  filename <- paste0('results.', filename, '.rds')
+  filename <- paste0('results.', filename, '.DESeqnorm.rds')
   saveRDS(results, file=here(filename))
-
+  
   rm(list=c('counts', 'DE', 'DD', 'lfcm1', 'lfcm2', 'lfcd1', 'lfcd2', 
             'nf', 'norm', 'dge', 'filename', 'results'))
 }
 
-filename <- paste0('sessionInfo.DEDD', samples.per.cond, '.rds')
+filename <- paste0('sessionInfo.DEDD', samples.per.cond, '.DESeqnorm.rds')
 saveRDS(sessionInfo(), file=here(filename))
-
 
 
