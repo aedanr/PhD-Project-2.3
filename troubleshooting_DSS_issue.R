@@ -1,6 +1,7 @@
 library(DSS)
 library(edgeR)
 rawdata <- readRDS('raw.counts.DE50.1.rds')
+group <- factor(c(rep(1,50), rep(2,50)))
 libsizes <- colSums(rawdata)
 nf.tmm <- calcNormFactors(rawdata, method="TMM")
 els.tmm <- nf.tmm * libsizes
