@@ -2,7 +2,7 @@ library(here)
 library(coda)
 library(HDInterval)
 library(compcodeR)
-library(edgeR)
+library(DESeq2)
 library(MDSeq)
 source(here('scripts','2019-04-03_exponential_hmm_adaptive_proposals_three_chains_function.R'))
 source(here('scripts','2019-03-27_lognormal_hmm_adaptive_proposals_three_chains_function.R'))
@@ -11,6 +11,7 @@ source(here('scripts','2019-05-17_compData_diff_disp_functions.R'))
 
 samples.per.cond <- 2
 group <- factor(c(rep(1,samples.per.cond), rep(2,samples.per.cond)))
+design <- model.matrix(~group)
 cores <- detectCores()
 
 for (i in 1:50) {
@@ -24,8 +25,12 @@ for (i in 1:50) {
   lfcd2 <- abs(counts@variable.annotations$truelog2fcdispersion) > 2
   
   # Normalise and create DGEList object
-  nf <- calcNormFactors(counts@count.matrix)
+  dat.DESeq <- DESeqDataSetFromMatrix(countData=counts@count.matrix, colData=data.frame(group), 
+                                      design=~group)
+  dat.DESeq <- estimateSizeFactors(dat.DESeq)
+  nf <- dat.DESeq$sizeFactor
   norm <- t(t(counts@count.matrix) / nf)
+  rm(dat.DESeq)
 
   ## MDSeq
   contrasts <- get.model.matrix(group)
@@ -112,11 +117,11 @@ for (i in 1:50) {
                   p.disp.lfc1.lnHM = p.disp.lfc1.lnHM, 
                   p.disp.lfc2.lnHM = p.disp.lfc2.lnHM)
   
-  filename <- paste0('results.', filename, '.rds')
+  filename <- paste0('results.', filename, '.DESeqnorm.rds')
   saveRDS(results, file=here(filename))
 
   rm(list=c('counts', 'DD', 'lfcd1', 'lfcd2', 'nf', 'norm', 'filename', 'results'))
 }
 
-filename <- paste0('sessionInfo.DD', samples.per.cond, '.rds')
+filename <- paste0('sessionInfo.DD', samples.per.cond, '.DESeqnorm.rds')
 saveRDS(sessionInfo(), file=here(filename))

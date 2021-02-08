@@ -1,7 +1,7 @@
 library(here)
 
-###################
-# DEDD2, 5, 10 ####
+#######################
+# DEDD2, 5, 10, 20 ####
 for (i in c('DE', 'DE.lfc1', 'DE.lfc2', 'DD', 'DD.lfc1', 'DD.lfc2', 'DEDD')) {
   for (j in c('DEDD2', 'DEDD5', 'DEDD10', 'DEDD20')) {
     assign(paste0(i,'.results.',j), readRDS(here('Results/DEDD compcodeR data results July-Aug 2019', 
@@ -308,8 +308,8 @@ round(colMeans(DEDD.results.DEDD10$tpr, na.rm=T),3)
 round(colMeans(DEDD.results.DEDD20$tpr, na.rm=T),3)
 
 
-#################
-# DE2, 5, 10 ####
+#####################
+# DE2, 5, 10, 20 ####
 for (i in c('DE', 'DE.lfc1', 'DE.lfc2', 'DEDD')) {
   for (j in c('DE2', 'DE5', 'DE10', 'DE20')) {
     assign(paste0(i,'.results.',j), readRDS(here('Results/DE compcodeR data results July-Aug 2019', 

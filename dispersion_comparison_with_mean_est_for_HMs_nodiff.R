@@ -4,22 +4,18 @@ library(compcodeR)
 library(edgeR)
 library(DESeq2)
 library(DSS)
-# source(here("scripts", "2019-05-03_bfdr_function.R"))
-# source(here("scripts", "2020-07-23_hpd_tail_prob_function.R"))
-source(here("Data/scripts", "2019-05-03_bfdr_function.R"))
-source(here("Data/scripts", "2020-07-23_hpd_tail_prob_function.R"))
+source(here("scripts", "2019-05-03_bfdr_function.R"))
+source(here("scripts", "2020-07-23_hpd_tail_prob_function.R"))
 
 samples.per.cond <- 20
 group <- factor(c(rep(1,samples.per.cond), rep(2,samples.per.cond)))
 design <- model.matrix(~group)
 
-for (i in 1:50) {
+for (i in 29:50) {
   # Load data
-  filename <- paste0('DE', samples.per.cond, '.', i)
-  # counts <- readRDS(here('Simulated data', paste0(filename, '.rds')))
-  counts <- readRDS(here('Data/Simulated data', paste0(filename, '.rds')))
-  DE <- counts@variable.annotations$differential.expression
-  
+  filename <- paste0('nodiff', samples.per.cond, '.', i)
+  counts <- readRDS(here('Simulated data', paste0(filename, '.rds')))
+
   # Normalise and create DGEList object
   libsizes <- colSums(counts@count.matrix)
   nf <- calcNormFactors(counts@count.matrix, method="TMM")
@@ -32,10 +28,10 @@ for (i in 1:50) {
   disps.edgeR.trended <- dat.edgeR$trended.dispersion
   disps.edgeR.tagwise <- dat.edgeR$tagwise.dispersion
   rm(dat.edgeR)
-  
+
   ## DESeq2
   dat.DESeq2 <- DESeqDataSetFromMatrix(countData=counts@count.matrix, colData=data.frame(group), 
-                                       design=~group)
+                                      design=~group)
   sizeFactors(dat.DESeq2) <- sf
   dat.DESeq2 <- estimateDispersions(dat.DESeq2)
   disps.DESeq2 <- mcols(dat.DESeq2)$dispersion
@@ -49,18 +45,13 @@ for (i in 1:50) {
   disps.DSS.notrend <- notrend.DSS@dispersion
   disps.DSS.trend <- trend.DSS@dispersion
   rm(dat.DSS)
-  
+
   ## expHM
-  # source(here("scripts", "2020-07-17_conditional_posterior_functions_exponential_hmm.R"))
-  # source(here("scripts", "2020-07-23_exponential_hmm_one_chain_function.R"))
-  # source(here("scripts", "2020-07-23_exponential_hmm_three_chains_function.R"))
-  # source(here("scripts", "2020-07-25_exponential_hmm_adaptive_proposals_three_chains_function.R"))
-  # source(here("scripts", "2020-09-02_run_expHMM.R"))
-  source(here("Data/scripts", "2020-07-17_conditional_posterior_functions_exponential_hmm.R"))
-  source(here("Data/scripts", "2020-07-23_exponential_hmm_one_chain_function.R"))
-  source(here("Data/scripts", "2020-07-23_exponential_hmm_three_chains_function.R"))
-  source(here("Data/scripts", "2020-07-25_exponential_hmm_adaptive_proposals_three_chains_function.R"))
-  source(here("Data/scripts", "2020-09-02_run_expHMM.R"))
+  source(here("scripts", "2020-07-17_conditional_posterior_functions_exponential_hmm.R"))
+  source(here("scripts", "2020-07-23_exponential_hmm_one_chain_function.R"))
+  source(here("scripts", "2020-07-23_exponential_hmm_three_chains_function.R"))
+  source(here("scripts", "2020-07-25_exponential_hmm_adaptive_proposals_three_chains_function.R"))
+  source(here("scripts", "2020-09-02_run_expHMM.R"))
   expHM <- expHMM(counts=t(norm.counts), groups=group, return.raw.results=T)
   disps.expHM <- colMeans(as.matrix(expHM$disps0))
   disps.expHM.1 <- colMeans(as.matrix(expHM$disps1))
@@ -71,16 +62,11 @@ for (i in 1:50) {
   rm(expHM)
   
   # lnHM
-  # source(here("scripts", "2020-07-17_conditional_posterior_functions_lognormal_hmm.R"))
-  # source(here("scripts", "2020-07-23_lognormal_hmm_one_chain_function.R"))
-  # source(here("scripts", "2020-07-23_lognormal_hmm_three_chains_function.R"))
-  # source(here("scripts", "2020-07-25_lognormal_hmm_adaptive_proposals_three_chains_function.R"))
-  # source(here("scripts", "2020-09-02_run_lnHMM.R"))
-  source(here("Data/scripts", "2020-07-17_conditional_posterior_functions_lognormal_hmm.R"))
-  source(here("Data/scripts", "2020-07-23_lognormal_hmm_one_chain_function.R"))
-  source(here("Data/scripts", "2020-07-23_lognormal_hmm_three_chains_function.R"))
-  source(here("Data/scripts", "2020-07-25_lognormal_hmm_adaptive_proposals_three_chains_function.R"))
-  source(here("Data/scripts", "2020-09-02_run_lnHMM.R"))
+  source(here("scripts", "2020-07-17_conditional_posterior_functions_lognormal_hmm.R"))
+  source(here("scripts", "2020-07-23_lognormal_hmm_one_chain_function.R"))
+  source(here("scripts", "2020-07-23_lognormal_hmm_three_chains_function.R"))
+  source(here("scripts", "2020-07-25_lognormal_hmm_adaptive_proposals_three_chains_function.R"))
+  source(here("scripts", "2020-09-02_run_lnHMM.R"))
   lnHM <- lnHMM(counts=t(norm.counts), groups=group, return.raw.results=T)
   disps.lnHM <- colMeans(as.matrix(lnHM$disps0))
   disps.lnHM.1 <- colMeans(as.matrix(lnHM$disps1))
@@ -91,7 +77,6 @@ for (i in 1:50) {
   rm(lnHM)
   
   results <- list(data = counts, 
-                  DE = DE, 
                   disps.edgeR.trended = disps.edgeR.trended, 
                   disps.edgeR.tagwise = disps.edgeR.tagwise, 
                   disps.DESeq2 = disps.DESeq2, 
@@ -111,12 +96,11 @@ for (i in 1:50) {
                   means.lnHM.2 = means.lnHM.2)
   
   filename <- paste0('disp.results.', filename, '.rds')
-  # saveRDS(results, file=here('Results/Dispersion estimation Dec 2020', filename))
-  saveRDS(results, file=here('Dispersion estimation results Dec 2020', filename))
+  saveRDS(results, file=here('Results/Dispersion estimation Dec 2020', filename))
   
   rm(list=c('norm.counts', 'nf', 'sf', 'dge', 'notrend.DSS', 'trend.DSS', 'filename', 'results'))
 }
 
-filename <- paste0('sessionInfo.dispersion.DE', samples.per.cond, '.rds')
-saveRDS(sessionInfo(), file=here('Dispersion estimation results Dec 2020', filename))
+filename <- paste0('sessionInfo.dispersion.nodiff', samples.per.cond, '.rds')
+saveRDS(sessionInfo(), file=here(filename))
 

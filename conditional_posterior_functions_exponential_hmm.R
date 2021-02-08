@@ -1,9 +1,10 @@
 # Per gene conditional log posterior mean function
 # Uses vectors of per-gene sample means and mean and dispersion estimates
 mean.conditional.log.posterior <- function(n, sample.means, means, disps, prior.rate) {
+  x <- 1/disps
   out <- rep(-1e20, length(means))
   index <- which(means>0)
-  out[index] <- -n*(sample.means[index] + 1/disps[index]) * log(1 + means[index]*disps[index]) + 
+  out[index] <- -n*(sample.means[index] + x[index]) * log(1 + means[index]*disps[index]) + 
     n*sample.means[index]*log(means[index]) - 
     prior.rate*means[index]
   return(out)
@@ -15,15 +16,13 @@ mean.conditional.log.posterior <- function(n, sample.means, means, disps, prior.
 # and vectors of per-gene sample means and mean and dispersion estimates
 disp.conditional.log.posterior <- function(genes, counts, n, sample.means, 
                                            means, disps, prior.rate) {
+  x <- 1/disps
   out <- rep(-1e20, genes)
   index <- which(disps>0)
-  lgammasum <- numeric(genes)
-  for (j in index) {
-    lgammasum[j] <- sum(lgamma(counts[,j] + 1/disps[j]))
-  }
+  lgammasum <- colSums(lgamma(counts + rep(x, each = nrow(counts))))
   out[index] <- lgammasum[index] - 
-    n*lgamma(1/disps[index]) - 
-    n*(sample.means[index] + 1/disps[index]) * log(1 + means[index]*disps[index]) + 
+    n*lgamma(x[index]) - 
+    n*(sample.means[index] + x[index]) * log(1 + means[index]*disps[index]) + 
     n*sample.means[index]*log(disps[index]) - 
     prior.rate*disps[index]
   return(out)
@@ -43,13 +42,11 @@ prior.rate.posterior.params <- function(g, z, hyperprior.rate,
 # and vectors of per-gene sample means and mean and dispersion estimates
 pz0 <- function(genes, counts, n, sample.means, means, disps, 
                 mean.prior.rate, disp.prior.rate, lambda) {
-  lgammasum <- numeric(genes)
-  for (j in 1:genes) {
-    lgammasum[j] <- sum(lgamma(counts[,j] + 1/disps[j]))
-  }
+  x <- 1/disps
+  lgammasum <- colSums(lgamma(counts + rep(x, each = nrow(counts))))
   return(lgammasum - 
-           n*lgamma(1/disps) - 
-           n*(sample.means + 1/disps) * log(1 + means*disps) + 
+           n*lgamma(x) - 
+           n*(sample.means + x) * log(1 + means*disps) + 
            n*sample.means * log(means*disps) - 
            mean.prior.rate*means - 
            disp.prior.rate*disps + 
@@ -64,19 +61,17 @@ pz0 <- function(genes, counts, n, sample.means, means, disps,
 pz1 = function(genes, counts1, counts2, n1, n2, 
                sample.means1, sample.means2, means1, means2, disps1, disps2, 
                mean.prior.rate, disp.prior.rate, lambda) {
-  lgammasum1 <- numeric(genes)
-  lgammasum2 <- numeric(genes)
-  for (j in 1:genes) {
-    lgammasum1[j] <- sum(lgamma(counts1[,j] + 1/disps1[j]))
-    lgammasum2[j] <- sum(lgamma(counts2[,j] + 1/disps2[j]))
-  }
+  x1 <- 1/disps1
+  x2 <- 1/disps2
+  lgammasum1 <- colSums(lgamma(counts1 + rep(x1, each = nrow(counts1))))
+  lgammasum2 <- colSums(lgamma(counts2 + rep(x2, each = nrow(counts2))))
   return(lgammasum1 - 
-           n1*lgamma(1/disps1) - 
-           n1*(sample.means1 + 1/disps1) * log(1 + means1*disps1) + 
+           n1*lgamma(x1) - 
+           n1*(sample.means1 + x1) * log(1 + means1*disps1) + 
            n1*sample.means1 * log(means1*disps1) +
            lgammasum2 - 
-           n2*lgamma(1/disps2) - 
-           n2*(sample.means2 + 1/disps2) * log(1 + means2*disps2) + 
+           n2*lgamma(x2) - 
+           n2*(sample.means2 + x2) * log(1 + means2*disps2) + 
            n2*sample.means2 * log(means2*disps2) + 
            log(mean.prior.rate) + 
            log(disp.prior.rate) - 

@@ -4,8 +4,8 @@ library(here)
 # DEDD2, 5, 10 ####
 for (i in c('DE', 'DE.lfc1', 'DE.lfc2', 'DD', 'DD.lfc1', 'DD.lfc2', 'DEDD')) {
   for (j in c('DEDD2', 'DEDD5', 'DEDD10')) {
-    assign(paste0(i,'.results.',j), readRDS(here('Results/DEDD compcodeR data results July-Aug 2019', 
-                                     paste0(i,'.results.',j,'.rds'))))
+    assign(paste0(i,'.results.',j), readRDS(here('Results/DEDD compcodeR data results DESeq2 norm Aug 2019', 
+                                                 paste0(i,'.results.',j,'.DESeqnorm.rds'))))
   }
 }
 rm('i','j')
@@ -409,8 +409,8 @@ round(colMeans(DEDD.results.DE10$tpr),3)
 # DD2, 5, 10 ####
 for (i in c('DD', 'DD.lfc1', 'DD.lfc2', 'DEDD')) {
   for (j in c('DD2', 'DD5', 'DD10')) {
-    assign(paste0(i,'.results.',j), readRDS(here('Results/DD compcodeR data results July 2019', 
-                                                 paste0(i,'.results.',j,'.rds'))))
+    assign(paste0(i,'.results.',j), readRDS(here('Results/DD compcodeR data results DESeq2 norm Aug 2019', 
+                                                 paste0(i,'.results.',j,'.DESeqnorm.rds'))))
   }
 }
 rm('i','j')
