@@ -17,9 +17,6 @@ exp_hmm_3_chains <- function(counts, groups, chain.length, thin=1, inits1, inits
                              disp.proposal.scales1=rep(0.5, ncol(counts)), 
                              disp.proposal.scales2=rep(0.5, ncol(counts))) {
   
-  require(here)
-  source(here("scripts","2019-04-02_conditional_posterior_functions_exponential_hmm.R"))
-
   genes <- ncol(counts)
   counts1 <- counts[groups==1,]
   counts2 <- counts[groups==2,]
@@ -119,7 +116,7 @@ exp_hmm_3_chains <- function(counts, groups, chain.length, thin=1, inits1, inits
   accept.disps0.3 <- numeric(genes)
   accept.disps1.3 <- numeric(genes)
   accept.disps2.3 <- numeric(genes)
-
+  
   # Run MCMC ####
   for (iter in 1:chain.length) {
     # Metropolis updates for per-gene overall means ####

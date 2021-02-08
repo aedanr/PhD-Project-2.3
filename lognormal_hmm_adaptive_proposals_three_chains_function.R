@@ -7,13 +7,7 @@
 ln_hmm_adapt_3_chains <- function(counts, groups, chain.length=2000, 
                                   initial.chain.length=100, adapt.chain.length=100) {
   
-  require(here)
   require(coda)
-  source(here("scripts","2018-11-28_conditional_posterior_functions_lognormal_hmm.R"))
-  source(here("scripts","2019-03-27_lognormal_hmm_one_chain_function.R"))
-  source(here("scripts","2019-03-27_lognormal_hmm_three_chains_function.R"))
-  
-  genes <- ncol(counts)
   genes <- ncol(counts)
   counts1 <- counts[groups==1,]
   counts2 <- counts[groups==2,]
@@ -26,12 +20,14 @@ ln_hmm_adapt_3_chains <- function(counts, groups, chain.length=2000,
   sample.vars0 <- apply(counts, 2, var)
   sample.vars1 <- apply(counts1, 2, var)
   sample.vars2 <- apply(counts2, 2, var)
+  rm(counts1, counts2)
   sample.disps0 <- pmax(sample.vars0-sample.means0, 0.01) / pmax(sample.means0^2, 0.1)
   sample.disps1 <- pmax(sample.vars1-sample.means1, 0.01) / pmax(sample.means1^2, 0.1)
   sample.disps2 <- pmax(sample.vars2-sample.means2, 0.01) / pmax(sample.means2^2, 0.1)
+  rm(sample.vars0, sample.vars1, sample.vars2)
   
   # Set proposal scales
-  print("initialising...")
+  message("initialising...")
   adapt.mcmc <- ln_hmm_1_chain(counts=counts, groups=groups, chain.length=initial.chain.length, thin=1, 
                                inits=list("means0" = sample.means0, "means1" = sample.means1, 
                                           "means2" = sample.means2, 
@@ -47,6 +43,8 @@ ln_hmm_adapt_3_chains <- function(counts, groups, chain.length=2000,
                                disp.proposal.scales2=rep(0.5, ncol(counts)), 
                                mean.prior.scale.proposal.sd=0.1, 
                                disp.prior.scale.proposal.sd=0.4)
+  rm(sample.means0, sample.means1, sample.means2, 
+     sample.disps0, sample.disps1, sample.disps2)
   inits1.adapt <- list("means0"=apply(adapt.mcmc$posterior.means0, 2, min)/5, 
                        "means1"=apply(adapt.mcmc$posterior.means1, 2, min)/5, 
                        "means2"=apply(adapt.mcmc$posterior.means2, 2, min)/5, 
@@ -78,7 +76,7 @@ ln_hmm_adapt_3_chains <- function(counts, groups, chain.length=2000,
                        "disp.prior.location"=max(adapt.mcmc$posterior.disp.prior.location)*2, 
                        "disp.prior.scale"=max(adapt.mcmc$posterior.disp.prior.scale)*2)
   
-  print("optimising proposal distributions...")
+  message("optimising proposal distributions...")
   current.mean.proposal.scales0 <- adapt.mcmc$mean.proposal.scales0*(1+2.25*(adapt.mcmc$accept.means0-0.44))
   current.mean.proposal.scales1 <- adapt.mcmc$mean.proposal.scales1*(1+2.25*(adapt.mcmc$accept.means1-0.44))
   current.mean.proposal.scales2 <- adapt.mcmc$mean.proposal.scales2*(1+2.25*(adapt.mcmc$accept.means2-0.44))
@@ -100,6 +98,7 @@ ln_hmm_adapt_3_chains <- function(counts, groups, chain.length=2000,
                                 disp.proposal.scales2=current.disp.proposal.scales2, 
                                 mean.prior.scale.proposal.sd=current.mean.prior.scale.proposal.sd, 
                                 disp.prior.scale.proposal.sd=current.disp.prior.scale.proposal.sd)
+  rm(inits1.adapt, inits2.adapt, inits3.adapt)
   current.means0.1 <- adapt.mcmc$posterior.means0.1
   current.means1.1 <- adapt.mcmc$posterior.means1.1
   current.means2.1 <- adapt.mcmc$posterior.means2.1
@@ -233,6 +232,7 @@ ln_hmm_adapt_3_chains <- function(counts, groups, chain.length=2000,
                                       adapt.mcmc$accept.disp.prior.scale.3))
     adapt.runs <- adapt.runs+1
   }
+  rm(adapt.mcmc)
   inits1 <- list("means0"=current.means0.1, "means1"=current.means1.1, "means2"=current.means2.1, 
                  "disps0"=current.disps0.1, "disps1"=current.disps1.1, "disps2"=current.disps2.1, 
                  "mean.prior.location"=current.mean.prior.location.1, 
@@ -261,7 +261,7 @@ ln_hmm_adapt_3_chains <- function(counts, groups, chain.length=2000,
   disp.prior.scale.proposal.sd <- current.disp.prior.scale.proposal.sd
   
   # Run MCMC ####
-  print("running mcmc...")
+  message("running mcmc...")
   final.chains <- ln_hmm_3_chains(counts=counts, groups=groups, chain.length=chain.length, thin=1, 
                                   inits1=inits1, inits2=inits2, inits3=inits3, 
                                   mean.proposal.scales0=mean.proposal.scales0, 
@@ -272,6 +272,7 @@ ln_hmm_adapt_3_chains <- function(counts, groups, chain.length=2000,
                                   disp.proposal.scales2=disp.proposal.scales2, 
                                   mean.prior.scale.proposal.sd=mean.prior.scale.proposal.sd, 
                                   disp.prior.scale.proposal.sd=disp.prior.scale.proposal.sd)
+  rm(inits1, inits2, inits3)
   means0 <- mcmc.list(mcmc(final.chains$posterior.means0.1), 
                       mcmc(final.chains$posterior.means0.2), 
                       mcmc(final.chains$posterior.means0.3))
@@ -308,7 +309,8 @@ ln_hmm_adapt_3_chains <- function(counts, groups, chain.length=2000,
   proportion <- mcmc.list(mcmc(final.chains$posterior.proportion.1), 
                           mcmc(final.chains$posterior.proportion.2), 
                           mcmc(final.chains$posterior.proportion.3))
-  
+  rm(final.chains)
+
   return(list("chain.length"=chain.length, 
               "adaptive.runs"=adapt.runs, 
               "mean.proposal.scales0"=mean.proposal.scales0, 

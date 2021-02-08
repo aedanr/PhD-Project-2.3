@@ -17,9 +17,6 @@ exp_hmm_1_chain <- function(counts, groups, chain.length, thin=1, inits,
                             disp.proposal.scales1=rep(0.5, ncol(counts)), 
                             disp.proposal.scales2=rep(0.5, ncol(counts))) {
   
-  require(here)
-  source(here("scripts","2019-04-02_conditional_posterior_functions_exponential_hmm.R"))
-
   genes <- ncol(counts)
   counts1 <- counts[groups==1,]
   counts2 <- counts[groups==2,]
@@ -67,7 +64,7 @@ exp_hmm_1_chain <- function(counts, groups, chain.length, thin=1, inits,
   accept.disps0 <- numeric(genes)
   accept.disps1 <- numeric(genes)
   accept.disps2 <- numeric(genes)
-
+  
   # Run MCMC ####
   for (iter in 1:chain.length) {
     # Metropolis updates for per-gene overall means ####
@@ -138,8 +135,8 @@ exp_hmm_1_chain <- function(counts, groups, chain.length, thin=1, inits,
     
     # Metropolis updates for per-gene overall dispersions ####
     proposed.posterior.disps0 <- rlnorm(n=genes, 
-                                       meanlog=log(current.posterior.disps0), 
-                                       sdlog=sqrt.disp.proposal.scales0)
+                                        meanlog=log(current.posterior.disps0), 
+                                        sdlog=sqrt.disp.proposal.scales0)
     replace <- log(runif(genes)) <= 
       disp.conditional.log.posterior(genes=genes, 
                                      counts=counts, 
@@ -164,8 +161,8 @@ exp_hmm_1_chain <- function(counts, groups, chain.length, thin=1, inits,
     
     # Metropolis updates for per-gene group 1 dispersions ####
     proposed.posterior.disps1 <- rlnorm(n=genes, 
-                                       meanlog=log(current.posterior.disps1), 
-                                       sdlog=sqrt.disp.proposal.scales1)
+                                        meanlog=log(current.posterior.disps1), 
+                                        sdlog=sqrt.disp.proposal.scales1)
     replace <- log(runif(genes)) <= 
       disp.conditional.log.posterior(genes=genes, 
                                      counts=counts1, 
@@ -190,8 +187,8 @@ exp_hmm_1_chain <- function(counts, groups, chain.length, thin=1, inits,
     
     # Metropolis updates for per-gene group 2 dispersions ####
     proposed.posterior.disps2 <- rlnorm(n=genes, 
-                                       meanlog=log(current.posterior.disps2), 
-                                       sdlog=sqrt.disp.proposal.scales2)
+                                        meanlog=log(current.posterior.disps2), 
+                                        sdlog=sqrt.disp.proposal.scales2)
     replace <- log(runif(genes)) <= 
       disp.conditional.log.posterior(genes=genes, 
                                      counts=counts2, 
@@ -266,7 +263,7 @@ exp_hmm_1_chain <- function(counts, groups, chain.length, thin=1, inits,
     current.posterior.proportion <- rbeta(n=1, 
                                           shape1=1+sum(current.posterior.indicators), 
                                           shape2=1+genes-sum(current.posterior.indicators))
-
+    
     # Update posterior samples ####
     if (iter/thin==round(iter/thin)) {
       posterior.means0[iter/thin,] <- current.posterior.means0

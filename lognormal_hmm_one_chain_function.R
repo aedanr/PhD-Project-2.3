@@ -19,9 +19,6 @@ ln_hmm_1_chain <- function(counts, groups, chain.length, thin=1, inits,
                            mean.prior.scale.proposal.sd=0.1, 
                            disp.prior.scale.proposal.sd=0.4) {
   
-  require(here)
-  source(here("scripts","2018-11-28_conditional_posterior_functions_lognormal_hmm.R"))
-
   genes <- ncol(counts)
   counts1 <- counts[groups==1,]
   counts2 <- counts[groups==2,]
@@ -80,8 +77,8 @@ ln_hmm_1_chain <- function(counts, groups, chain.length, thin=1, inits,
   for (iter in 1:chain.length) {
     # Metropolis updates for per-gene overall means ####
     proposed.posterior.means0 <- rlnorm(n=genes, 
-                                       meanlog=log(current.posterior.means0), 
-                                       sdlog=sqrt.mean.proposal.scales0)
+                                        meanlog=log(current.posterior.means0), 
+                                        sdlog=sqrt.mean.proposal.scales0)
     replace <- log(runif(genes)) <= 
       mean.conditional.log.posterior(n=samples0, 
                                      sample.means=sample.means0, 
@@ -90,7 +87,7 @@ ln_hmm_1_chain <- function(counts, groups, chain.length, thin=1, inits,
                                      prior.location=current.posterior.mean.prior.location, 
                                      prior.scale=current.posterior.mean.prior.scale) + 
       (log(proposed.posterior.means0) + (log(proposed.posterior.means0) - 
-                                          log(current.posterior.means0))^2 / (2*mean.proposal.scales0)) - 
+                                           log(current.posterior.means0))^2 / (2*mean.proposal.scales0)) - 
       mean.conditional.log.posterior(n=samples0, 
                                      sample.means=sample.means0, 
                                      means=current.posterior.means0, 
@@ -98,7 +95,7 @@ ln_hmm_1_chain <- function(counts, groups, chain.length, thin=1, inits,
                                      prior.location=current.posterior.mean.prior.location, 
                                      prior.scale=current.posterior.mean.prior.scale) - 
       (log(current.posterior.means0) + (log(current.posterior.means0) - 
-                                         log(proposed.posterior.means0))^2 / (2*mean.proposal.scales0))
+                                          log(proposed.posterior.means0))^2 / (2*mean.proposal.scales0))
     current.posterior.means0[replace] <- proposed.posterior.means0[replace]
     accept.means0[replace] <- accept.means0[replace] + 1/chain.length
     
@@ -152,8 +149,8 @@ ln_hmm_1_chain <- function(counts, groups, chain.length, thin=1, inits,
     
     # Metropolis updates for per-gene overall dispersions ####
     proposed.posterior.disps0 <- rlnorm(n=genes, 
-                                       meanlog=log(current.posterior.disps0), 
-                                       sdlog=sqrt.disp.proposal.scales0)
+                                        meanlog=log(current.posterior.disps0), 
+                                        sdlog=sqrt.disp.proposal.scales0)
     replace <- log(runif(genes)) <= 
       disp.conditional.log.posterior(genes=genes, 
                                      counts=counts, 
@@ -164,7 +161,7 @@ ln_hmm_1_chain <- function(counts, groups, chain.length, thin=1, inits,
                                      prior.location=current.posterior.disp.prior.location, 
                                      prior.scale=current.posterior.disp.prior.scale) + 
       (log(proposed.posterior.disps0) + (log(proposed.posterior.disps0) - 
-                                          log(current.posterior.disps0))^2 / (2*disp.proposal.scales0)) - 
+                                           log(current.posterior.disps0))^2 / (2*disp.proposal.scales0)) - 
       disp.conditional.log.posterior(genes=genes, 
                                      counts=counts, 
                                      n=samples0, 
@@ -174,7 +171,7 @@ ln_hmm_1_chain <- function(counts, groups, chain.length, thin=1, inits,
                                      prior.location=current.posterior.disp.prior.location, 
                                      prior.scale=current.posterior.disp.prior.scale) - 
       (log(current.posterior.disps0) + (log(current.posterior.disps0) - 
-                                         log(proposed.posterior.disps0))^2 / (2*disp.proposal.scales0))
+                                          log(proposed.posterior.disps0))^2 / (2*disp.proposal.scales0))
     current.posterior.disps0[replace] <- proposed.posterior.disps0[replace]
     accept.disps0[replace] <- accept.disps0[replace] + 1/chain.length
     
@@ -338,7 +335,7 @@ ln_hmm_1_chain <- function(counts, groups, chain.length, thin=1, inits,
     current.posterior.proportion <- rbeta(n=1, 
                                           shape1=1+sum(current.posterior.indicators), 
                                           shape2=1+genes-sum(current.posterior.indicators))
-
+    
     # Update posterior samples ####
     if (iter/thin==round(iter/thin)) {
       posterior.means0[iter/thin,] <- current.posterior.means0

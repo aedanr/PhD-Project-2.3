@@ -7,12 +7,7 @@
 exp_hmm_adapt_3_chains <- function(counts, groups, chain.length=1500, 
                                    initial.chain.length=100, adapt.chain.length=100) {
   
-  require(here)
   require(coda)
-  source(here("scripts","2019-04-02_conditional_posterior_functions_exponential_hmm.R"))
-  source(here("scripts","2019-04-03_exponential_hmm_one_chain_function.R"))
-  source(here("scripts","2019-04-03_exponential_hmm_three_chains_function.R"))
-  
   genes <- ncol(counts)
   counts1 <- counts[groups==1,]
   counts2 <- counts[groups==2,]
@@ -25,24 +20,28 @@ exp_hmm_adapt_3_chains <- function(counts, groups, chain.length=1500,
   sample.vars0 <- apply(counts, 2, var)
   sample.vars1 <- apply(counts1, 2, var)
   sample.vars2 <- apply(counts2, 2, var)
+  rm(counts1, counts2)
   sample.disps0 <- pmax(sample.vars0-sample.means0, 0.01) / pmax(sample.means0^2, 0.1)
   sample.disps1 <- pmax(sample.vars1-sample.means1, 0.01) / pmax(sample.means1^2, 0.1)
   sample.disps2 <- pmax(sample.vars2-sample.means2, 0.01) / pmax(sample.means2^2, 0.1)
+  rm(sample.vars0, sample.vars1, sample.vars2)
   
   # Set proposal scales
-  print("initialising...")
+  message("initialising...")
   adapt.mcmc <- exp_hmm_1_chain(counts=counts, groups=groups, chain.length=initial.chain.length, thin=1, 
-                               inits=list("means0" = sample.means0, "means1" = sample.means1, 
-                                          "means2" = sample.means2, 
-                                          "disps0" = sample.disps0, "disps1" = sample.disps1, 
-                                          "disps2" = sample.disps2, 
-                                          "mean.prior.rate" = 1, "disp.prior.rate" = 1), 
-                               mean.proposal.scales0=rep(0.2, ncol(counts)), 
-                               mean.proposal.scales1=rep(0.2, ncol(counts)), 
-                               mean.proposal.scales2=rep(0.2, ncol(counts)), 
-                               disp.proposal.scales0=rep(0.5, ncol(counts)), 
-                               disp.proposal.scales1=rep(0.5, ncol(counts)), 
-                               disp.proposal.scales2=rep(0.5, ncol(counts)))
+                                inits=list("means0" = sample.means0, "means1" = sample.means1, 
+                                           "means2" = sample.means2, 
+                                           "disps0" = sample.disps0, "disps1" = sample.disps1, 
+                                           "disps2" = sample.disps2, 
+                                           "mean.prior.rate" = 1, "disp.prior.rate" = 1), 
+                                mean.proposal.scales0=rep(0.2, ncol(counts)), 
+                                mean.proposal.scales1=rep(0.2, ncol(counts)), 
+                                mean.proposal.scales2=rep(0.2, ncol(counts)), 
+                                disp.proposal.scales0=rep(0.5, ncol(counts)), 
+                                disp.proposal.scales1=rep(0.5, ncol(counts)), 
+                                disp.proposal.scales2=rep(0.5, ncol(counts)))
+  rm(sample.means0, sample.means1, sample.means2, 
+     sample.disps0, sample.disps1, sample.disps2)
   inits1.adapt <- list("means0"=apply(adapt.mcmc$posterior.means0, 2, min)/5, 
                        "means1"=apply(adapt.mcmc$posterior.means1, 2, min)/5, 
                        "means2"=apply(adapt.mcmc$posterior.means2, 2, min)/5, 
@@ -68,7 +67,7 @@ exp_hmm_adapt_3_chains <- function(counts, groups, chain.length=1500,
                        "mean.prior.rate"=max(adapt.mcmc$posterior.mean.prior.rate)*2,
                        "disp.prior.rate"=max(adapt.mcmc$posterior.disp.prior.rate)*2)
   
-  print("optimising proposal distributions...")
+  message("optimising proposal distributions...")
   current.mean.proposal.scales0 <- adapt.mcmc$mean.proposal.scales0*(1+2.25*(adapt.mcmc$accept.means0-0.44))
   current.mean.proposal.scales1 <- adapt.mcmc$mean.proposal.scales1*(1+2.25*(adapt.mcmc$accept.means1-0.44))
   current.mean.proposal.scales2 <- adapt.mcmc$mean.proposal.scales2*(1+2.25*(adapt.mcmc$accept.means2-0.44))
@@ -76,14 +75,15 @@ exp_hmm_adapt_3_chains <- function(counts, groups, chain.length=1500,
   current.disp.proposal.scales1 <- adapt.mcmc$disp.proposal.scales1*(1+2.25*(adapt.mcmc$accept.disps1-0.44))
   current.disp.proposal.scales2 <- adapt.mcmc$disp.proposal.scales2*(1+2.25*(adapt.mcmc$accept.disps2-0.44))
   adapt.mcmc <- exp_hmm_3_chains(counts=counts, groups=groups, 
-                                chain.length=adapt.chain.length, thin=adapt.chain.length, 
-                                inits1=inits1.adapt, inits2=inits2.adapt, inits3=inits3.adapt, 
-                                mean.proposal.scales0=current.mean.proposal.scales0, 
-                                mean.proposal.scales1=current.mean.proposal.scales1, 
-                                mean.proposal.scales2=current.mean.proposal.scales2, 
-                                disp.proposal.scales0=current.disp.proposal.scales0, 
-                                disp.proposal.scales1=current.disp.proposal.scales1, 
-                                disp.proposal.scales2=current.disp.proposal.scales2)
+                                 chain.length=adapt.chain.length, thin=adapt.chain.length, 
+                                 inits1=inits1.adapt, inits2=inits2.adapt, inits3=inits3.adapt, 
+                                 mean.proposal.scales0=current.mean.proposal.scales0, 
+                                 mean.proposal.scales1=current.mean.proposal.scales1, 
+                                 mean.proposal.scales2=current.mean.proposal.scales2, 
+                                 disp.proposal.scales0=current.disp.proposal.scales0, 
+                                 disp.proposal.scales1=current.disp.proposal.scales1, 
+                                 disp.proposal.scales2=current.disp.proposal.scales2)
+  rm(inits1.adapt, inits2.adapt, inits3.adapt)
   current.means0.1 <- adapt.mcmc$posterior.means0.1
   current.means1.1 <- adapt.mcmc$posterior.means1.1
   current.means2.1 <- adapt.mcmc$posterior.means2.1
@@ -126,31 +126,31 @@ exp_hmm_adapt_3_chains <- function(counts, groups, chain.length=1500,
     current.disp.proposal.scales1 <- current.disp.proposal.scales1*(1+2.25*(accept.disps1-0.44))
     current.disp.proposal.scales2 <- current.disp.proposal.scales2*(1+2.25*(accept.disps2-0.44))
     adapt.mcmc <- exp_hmm_3_chains(counts=counts, groups=groups, 
-                                  chain.length=adapt.chain.length, thin=adapt.chain.length, 
-                                  inits1=list("means0"=current.means0.1, "means1"=current.means1.1, 
-                                              "means2"=current.means2.1, 
-                                              "disps0"=current.disps0.1, "disps1"=current.disps1.1, 
-                                              "disps2"=current.disps2.1, 
-                                              "mean.prior.rate"=current.mean.prior.rate.1, 
-                                              "disp.prior.rate"=current.disp.prior.rate.1), 
-                                  inits2=list("means0"=current.means0.2, "means1"=current.means1.2, 
-                                              "means2"=current.means2.2, 
-                                              "disps0"=current.disps0.2, "disps1"=current.disps1.2, 
-                                              "disps2"=current.disps2.2, 
-                                              "mean.prior.rate"=current.mean.prior.rate.2, 
-                                              "disp.prior.rate"=current.disp.prior.rate.2), 
-                                  inits3=list("means0"=current.means0.3, "means1"=current.means1.3, 
-                                              "means2"=current.means2.3, 
-                                              "disps0"=current.disps0.3, "disps1"=current.disps1.3, 
-                                              "disps2"=current.disps2.3, 
-                                              "mean.prior.rate"=current.mean.prior.rate.3, 
-                                              "disp.prior.rate"=current.disp.prior.rate.3), 
-                                  mean.proposal.scales0=current.mean.proposal.scales0, 
-                                  mean.proposal.scales1=current.mean.proposal.scales1, 
-                                  mean.proposal.scales2=current.mean.proposal.scales2, 
-                                  disp.proposal.scales0=current.disp.proposal.scales0, 
-                                  disp.proposal.scales1=current.disp.proposal.scales1, 
-                                  disp.proposal.scales2=current.disp.proposal.scales2)
+                                   chain.length=adapt.chain.length, thin=adapt.chain.length, 
+                                   inits1=list("means0"=current.means0.1, "means1"=current.means1.1, 
+                                               "means2"=current.means2.1, 
+                                               "disps0"=current.disps0.1, "disps1"=current.disps1.1, 
+                                               "disps2"=current.disps2.1, 
+                                               "mean.prior.rate"=current.mean.prior.rate.1, 
+                                               "disp.prior.rate"=current.disp.prior.rate.1), 
+                                   inits2=list("means0"=current.means0.2, "means1"=current.means1.2, 
+                                               "means2"=current.means2.2, 
+                                               "disps0"=current.disps0.2, "disps1"=current.disps1.2, 
+                                               "disps2"=current.disps2.2, 
+                                               "mean.prior.rate"=current.mean.prior.rate.2, 
+                                               "disp.prior.rate"=current.disp.prior.rate.2), 
+                                   inits3=list("means0"=current.means0.3, "means1"=current.means1.3, 
+                                               "means2"=current.means2.3, 
+                                               "disps0"=current.disps0.3, "disps1"=current.disps1.3, 
+                                               "disps2"=current.disps2.3, 
+                                               "mean.prior.rate"=current.mean.prior.rate.3, 
+                                               "disp.prior.rate"=current.disp.prior.rate.3), 
+                                   mean.proposal.scales0=current.mean.proposal.scales0, 
+                                   mean.proposal.scales1=current.mean.proposal.scales1, 
+                                   mean.proposal.scales2=current.mean.proposal.scales2, 
+                                   disp.proposal.scales0=current.disp.proposal.scales0, 
+                                   disp.proposal.scales1=current.disp.proposal.scales1, 
+                                   disp.proposal.scales2=current.disp.proposal.scales2)
     current.means0.1 <- adapt.mcmc$posterior.means0.1
     current.means1.1 <- adapt.mcmc$posterior.means1.1
     current.means2.1 <- adapt.mcmc$posterior.means2.1
@@ -183,6 +183,7 @@ exp_hmm_adapt_3_chains <- function(counts, groups, chain.length=1500,
     accept.disps2 <- (adapt.mcmc$accept.disps2.1 + adapt.mcmc$accept.disps2.2 + adapt.mcmc$accept.disps2.3)/3
     adapt.runs <- adapt.runs+1
   }
+  rm(adapt.mcmc)
   inits1 <- list("means0"=current.means0.1, "means1"=current.means1.1, "means2"=current.means2.1, 
                  "disps0"=current.disps0.1, "disps1"=current.disps1.1, "disps2"=current.disps2.1, 
                  "mean.prior.rate"=current.mean.prior.rate.1, "disp.prior.rate"=current.disp.prior.rate.1)
@@ -198,17 +199,18 @@ exp_hmm_adapt_3_chains <- function(counts, groups, chain.length=1500,
   disp.proposal.scales0 <- current.disp.proposal.scales0
   disp.proposal.scales1 <- current.disp.proposal.scales1
   disp.proposal.scales2 <- current.disp.proposal.scales2
-
+  
   # Run MCMC ####
-  print("running mcmc...")
+  message("running mcmc...")
   final.chains <- exp_hmm_3_chains(counts=counts, groups=groups, chain.length=chain.length, thin=1, 
-                                  inits1=inits1, inits2=inits2, inits3=inits3, 
-                                  mean.proposal.scales0=mean.proposal.scales0, 
-                                  mean.proposal.scales1=mean.proposal.scales1, 
-                                  mean.proposal.scales2=mean.proposal.scales2, 
-                                  disp.proposal.scales0=disp.proposal.scales0, 
-                                  disp.proposal.scales1=disp.proposal.scales1, 
-                                  disp.proposal.scales2=disp.proposal.scales2)
+                                   inits1=inits1, inits2=inits2, inits3=inits3, 
+                                   mean.proposal.scales0=mean.proposal.scales0, 
+                                   mean.proposal.scales1=mean.proposal.scales1, 
+                                   mean.proposal.scales2=mean.proposal.scales2, 
+                                   disp.proposal.scales0=disp.proposal.scales0, 
+                                   disp.proposal.scales1=disp.proposal.scales1, 
+                                   disp.proposal.scales2=disp.proposal.scales2)
+  rm(inits1, inits2, inits3)
   means0 <- mcmc.list(mcmc(final.chains$posterior.means0.1), 
                       mcmc(final.chains$posterior.means0.2), 
                       mcmc(final.chains$posterior.means0.3))
@@ -239,6 +241,7 @@ exp_hmm_adapt_3_chains <- function(counts, groups, chain.length=1500,
   proportion <- mcmc.list(mcmc(final.chains$posterior.proportion.1), 
                           mcmc(final.chains$posterior.proportion.2), 
                           mcmc(final.chains$posterior.proportion.3))
+  rm(final.chains)
   
   return(list("chain.length"=chain.length, 
               "adaptive.runs"=adapt.runs, 
